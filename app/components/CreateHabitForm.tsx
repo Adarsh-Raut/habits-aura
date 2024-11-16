@@ -12,10 +12,7 @@ interface HabitOption {
 
 export default function CreateHabitForm() {
   const [inputValue, setInputValue] = useState("");
-  const [selectedHabit, setSelectedHabit] = useState({
-    icon: "",
-    label: "",
-  });
+  const [selectedHabit, setSelectedHabit] = useState("");
   const [selectedDays, setSelectedDays] = useState<string[]>([
     "MON",
     "TUE",
@@ -36,17 +33,17 @@ export default function CreateHabitForm() {
     SUN: "S",
   };
 
-  const habitOptions: HabitOption[] = [
-    { icon: "💪", label: "Workout" },
-    { icon: "🇪🇸", label: "Learn Spanish" },
-    { icon: "🇺🇸", label: "Learn English" },
-    { icon: "🚭", label: "Stop smoking" },
-    { icon: "📚", label: "Read" },
-    { icon: "🇨🇳", label: "Learn Chinese" },
-    { icon: "🚫", label: "No alcohol" },
-    { icon: "🧘", label: "Meditate" },
-    { icon: "💧", label: "Drink" },
-    { icon: "🚶", label: "Walk" },
+  const habitOptions: string[] = [
+    "💪 Workout",
+    "🇪🇸 Learn Spanish",
+    "🇺🇸 Learn English",
+    "🚭 Stop smoking",
+    "📚 Read",
+    "🇨🇳 Learn Chinese",
+    "🚫 No alcohol",
+    "🧘 Meditate",
+    "💧 Drink",
+    "🚶 Walk",
   ];
 
   const toggleDay = (day: string) => {
@@ -55,14 +52,15 @@ export default function CreateHabitForm() {
     );
   };
 
-  const handleHabitSelect = (option: HabitOption) => {
+  const handleHabitSelect = (option: string) => {
     setSelectedHabit(option);
-    setInputValue(`${option.icon} ${option.label}`);
+    setInputValue(option);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    console.log(e.target.value);
     setInputValue(e.target.value);
-    setSelectedHabit({ icon: "", label: "" }); // Clear selected habit when typing
+    setSelectedHabit(""); // Clear selected habit when typing
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -71,7 +69,7 @@ export default function CreateHabitForm() {
     confetti({
       particleCount: 100,
       spread: 70,
-      origin: { y: 0.8 },
+      origin: { y: 0.6 },
     });
     console.log({ selectedHabit, selectedDays });
   };
@@ -85,7 +83,7 @@ export default function CreateHabitForm() {
           BACK
         </Link>
 
-        <form onSubmit={handleSubmit} className="card bg-base-200 p-6">
+        <form onSubmit={handleSubmit} className="card bg-neutral p-6">
           {/* Habit Input */}
           <div className="mb-6">
             <label className="text-lg mb-2 block">My new habit...</label>
@@ -102,13 +100,12 @@ export default function CreateHabitForm() {
           <div className="flex flex-wrap gap-2 mb-6">
             {habitOptions.map((option) => (
               <button
-                key={option.label}
+                key={option}
                 type="button"
-                className={`badge badge-neutral badge-lg cursor-pointer `}
+                className={`badge badge-base-200 badge-lg cursor-pointer `}
                 onClick={() => handleHabitSelect(option)}
               >
-                <span className="mr-1">{option.icon}</span>
-                {option.label}
+                {option}
               </button>
             ))}
           </div>
