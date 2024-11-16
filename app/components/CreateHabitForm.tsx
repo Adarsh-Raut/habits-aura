@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { FaArrowLeft } from "react-icons/fa6";
 import Link from "next/link";
+import confetti from "canvas-confetti";
 
 interface HabitOption {
   icon: string;
@@ -67,6 +68,11 @@ export default function CreateHabitForm() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // Handle form submission
+    confetti({
+      particleCount: 100,
+      spread: 70,
+      origin: { y: 0.8 },
+    });
     console.log({ selectedHabit, selectedDays });
   };
 
@@ -98,11 +104,7 @@ export default function CreateHabitForm() {
               <button
                 key={option.label}
                 type="button"
-                className={`badge badge-lg badge-ghost badge-outline cursor-pointer ${
-                  selectedHabit.label === option.label
-                    ? "btn-primary"
-                    : "btn-ghost"
-                }`}
+                className={`badge badge-neutral badge-lg cursor-pointer `}
                 onClick={() => handleHabitSelect(option)}
               >
                 <span className="mr-1">{option.icon}</span>
