@@ -5,11 +5,6 @@ import { FaArrowLeft } from "react-icons/fa6";
 import Link from "next/link";
 import confetti from "canvas-confetti";
 
-interface HabitOption {
-  icon: string;
-  label: string;
-}
-
 export default function CreateHabitForm() {
   const [inputValue, setInputValue] = useState("");
   const [selectedHabit, setSelectedHabit] = useState("");

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { BsThreeDotsVertical } from "react-icons/bs";
+import confetti from "canvas-confetti";
 
 interface Habit {
   id: string;
@@ -57,8 +58,17 @@ export default function Component() {
               className={`checkbox checkbox-lg border-2 rounded-md ${
                 habit.completed ? "checkbox-success" : ""
               }`}
-              onChange={() => {
+              onChange={(e) => {
                 toggleHabit(habit.id);
+                const rect = e.target.getBoundingClientRect(); // Get checkbox position
+                confetti({
+                  particleCount: 100,
+                  spread: 70,
+                  origin: {
+                    x: (rect.left + rect.width / 2) / window.innerWidth,
+                    y: (rect.top + rect.height / 2) / window.innerHeight,
+                  },
+                });
                 console.log(
                   `Toggled ${habit.name}, completed: ${!habit.completed}`
                 );
