@@ -15,6 +15,7 @@ model User {
   image         String?
   accounts      Account[]
   sessions      Session[]
+  habits        Habit[] // Relation to the Habit model
 }
 
 model Account {
@@ -53,4 +54,15 @@ model VerificationToken {
   expires    DateTime
 
   @@map("verification_tokens")
+}
+
+model Habit {
+  id          String   @id @default(cuid())
+  title       String // Title of the habit
+  isCompleted Boolean  @default(false) // Status of completion
+  days        String[] // Array of days associated with the habit
+  userId      String // Foreign key to the User model
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("habits")
 }

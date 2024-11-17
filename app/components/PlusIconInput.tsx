@@ -1,13 +1,14 @@
-"use client";
-
+import Link from "next/link";
 import React from "react";
 import { IoIosAdd } from "react-icons/io";
 
 const PlusIconInput = () => {
   return (
-    <button className="btn btn-ghost">
-      <IoIosAdd size={50} />
-    </button>
+    <Link href="/create">
+      <button className="btn btn-ghost">
+        <IoIosAdd size={50} />
+      </button>
+    </Link>
   );
 };
 

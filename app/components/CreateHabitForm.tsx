@@ -4,8 +4,10 @@ import { useState } from "react";
 import { FaArrowLeft } from "react-icons/fa6";
 import Link from "next/link";
 import confetti from "canvas-confetti";
+import { useRouter } from "next/navigation";
 
 export default function CreateHabitForm() {
+  const router = useRouter();
   const [inputValue, setInputValue] = useState("");
   const [selectedHabit, setSelectedHabit] = useState("");
   const [selectedDays, setSelectedDays] = useState<string[]>([
@@ -55,25 +57,46 @@ export default function CreateHabitForm() {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     console.log(e.target.value);
     setInputValue(e.target.value);
-    setSelectedHabit(""); // Clear selected habit when typing
+    setSelectedHabit("");
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle form submission
+
+    const habitTitle = inputValue || selectedHabit;
+
+    if (!habitTitle) {
+      console.error("Please enter a habit title");
+      return;
+    }
     confetti({
       particleCount: 100,
       spread: 70,
       origin: { y: 0.6 },
     });
     console.log({ selectedHabit, selectedDays });
+    const response = await fetch("/api/habit", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ title: habitTitle, days: selectedDays }),
+    });
+    const data = await response.json();
+    console.log(response, data);
+    if (response.ok) {
+      console.log("logged");
+      router.refresh();
+      router.push("/");
+    }
+    console.log(data);
   };
 
   return (
     <div className="min-h-screen bg-base-300 p-4">
       <div className="max-w-md mx-auto">
         {/* Back Button */}
-        <Link href="#" className="btn btn-ghost gap-2 mb-6">
+        <Link href="/" className="btn btn-ghost gap-2 mb-6">
           <FaArrowLeft className="w-4 h-4" />
           BACK
         </Link>
