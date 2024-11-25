@@ -32,8 +32,8 @@ export default function Sidebar() {
             className={`
               flex items-center gap-3 px-4 py-3 rounded-lg
               ${
-                item.isActive
-                  ? "text-gray-200 hover:bg-gray-700/50"
+                pathname === item.path
+                  ? "text-gray-200 bg-gray-700/50"
                   : "text-gray-500 hover:bg-gray-700/30"
               }
               transition-colors

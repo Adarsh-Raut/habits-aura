@@ -9,7 +9,9 @@ const Navbar = () => {
     <nav className="navbar bg-base-100">
       <div className="flex-1 px-4">
         <DiAtom className="h-10 w-10" />
-        <a className="btn btn-ghost normal-case text-xl">Habits</a>
+        <Link href="/" className="btn btn-ghost normal-case text-xl">
+          Habits
+        </Link>
         <Link href="/create" className="btn btn-ghost">
           <FaPlus className="h-5 w-5" />
         </Link>
