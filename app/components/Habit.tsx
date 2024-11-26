@@ -4,6 +4,9 @@ import { useEffect, useState } from "react";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import confetti from "canvas-confetti";
 
+import { AiOutlineLoading3Quarters } from "react-icons/ai";
+import { useRouter } from "next/navigation";
+
 interface Habit {
   id: string;
   title: string;
@@ -12,6 +15,8 @@ interface Habit {
 
 export default function Habit() {
   const [habits, setHabits] = useState<Habit[]>();
+  const [loadingHabitId, setLoadingHabitId] = useState<string | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     const fetchHabits = async () => {
@@ -23,12 +28,36 @@ export default function Habit() {
     fetchHabits();
   }, []);
 
-  const toggleHabit = (id: string) => {
-    setHabits(
-      habits?.map((habit) =>
-        habit.id === id ? { ...habit, isCompleted: !habit.isCompleted } : habit
-      )
+  const toggleHabit = async (id: string) => {
+    const currentHabit = habits?.find((habit) => habit.id === id);
+
+    setLoadingHabitId(id);
+    const updatedHabits = habits?.map((habit) =>
+      habit.id === id ? { ...habit, isCompleted: !habit.isCompleted } : habit
     );
+    setHabits(updatedHabits);
+
+    try {
+      const response = await fetch(`/api/habit/${id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          isCompleted: !currentHabit?.isCompleted,
+        }),
+      });
+
+      if (!response.ok) {
+        setHabits(habits);
+        throw new Error("Failed to update habit");
+      }
+    } catch (error) {
+      console.error("Error updating habit:", error);
+      setHabits(habits);
+    } finally {
+      setLoadingHabitId(null);
+    }
   };
 
   return (
@@ -61,18 +90,17 @@ export default function Habit() {
               }`}
               onChange={(e) => {
                 toggleHabit(habit.id);
-                const rect = e.target.getBoundingClientRect(); // Get checkbox position
-                confetti({
-                  particleCount: 100,
-                  spread: 70,
-                  origin: {
-                    x: (rect.left + rect.width / 2) / window.innerWidth,
-                    y: (rect.top + rect.height / 2) / window.innerHeight,
-                  },
-                });
-                console.log(
-                  `Toggled ${habit.title}, completed: ${!habit.isCompleted}`
-                );
+                if (!habit.isCompleted) {
+                  const rect = e.target.getBoundingClientRect();
+                  confetti({
+                    particleCount: 100,
+                    spread: 70,
+                    origin: {
+                      x: (rect.left + rect.width / 2) / window.innerWidth,
+                      y: (rect.top + rect.height / 2) / window.innerHeight,
+                    },
+                  });
+                }
               }}
               aria-label={`Mark ${habit.title} as ${
                 habit.isCompleted ? "incomplete" : "complete"
