@@ -90,17 +90,17 @@ export default function Habit() {
               }`}
               onChange={(e) => {
                 toggleHabit(habit.id);
-                if (!habit.isCompleted) {
-                  const rect = e.target.getBoundingClientRect();
-                  confetti({
-                    particleCount: 100,
-                    spread: 70,
-                    origin: {
-                      x: (rect.left + rect.width / 2) / window.innerWidth,
-                      y: (rect.top + rect.height / 2) / window.innerHeight,
-                    },
-                  });
-                }
+                // if (!habit.isCompleted) {
+                //   const rect = e.target.getBoundingClientRect();
+                //   confetti({
+                //     particleCount: 100,
+                //     spread: 70,
+                //     origin: {
+                //       x: (rect.left + rect.width / 2) / window.innerWidth,
+                //       y: (rect.top + rect.height / 2) / window.innerHeight,
+                //     },
+                //   });
+                // }
               }}
               aria-label={`Mark ${habit.title} as ${
                 habit.isCompleted ? "incomplete" : "complete"
