@@ -65,7 +65,9 @@ export default function Habit() {
       {habits?.map((habit) => (
         <div
           key={habit.id}
-          className="bg-neutral rounded-xl p-4 flex items-center justify-between"
+          className={`bg-neutral rounded-xl p-4 flex items-center justify-between transition-all duration-200 ${
+            habit.isCompleted ? "opacity-50" : "opacity-100"
+          }`}
         >
           <div className="flex items-center gap-4">
             <button className="btn btn-ghost btn-sm btn-circle">
