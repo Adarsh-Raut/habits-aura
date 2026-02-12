@@ -1,6 +1,6 @@
 import React from "react";
 
-const Leaderboard = ({ data }) => {
+const Leaderboard = ({ data, currentUserId }) => {
   return (
     <div className="bg-neutral shadow-xl p-6 rounded-lg">
       <h2 className="text-2xl font-bold mb-4">Leaderboard</h2>
@@ -8,7 +8,7 @@ const Leaderboard = ({ data }) => {
         <table className="table table-compact w-full">
           <thead>
             <tr>
-              <th></th>
+              <th>#</th>
               <th>Player</th>
               <th>24h</th>
               <th>7d</th>
@@ -17,25 +17,37 @@ const Leaderboard = ({ data }) => {
             </tr>
           </thead>
           <tbody>
-            {data.map((player, index) => (
-              <tr key={index}>
-                <th>{index + 1}</th>
-                <td>
-                  <div className="flex items-center space-x-2">
-                    <div className="avatar">
-                      <div className="w-8 rounded-full">
-                        <img src={player.avatar} alt={player.name} />
+            {data.map((player, index) => {
+              const isYou = player.id === currentUserId;
+
+              return (
+                <tr
+                  key={player.id}
+                  className={isYou ? "bg-success/20 font-bold" : ""}
+                >
+                  <th>{index + 1}</th>
+                  <td>
+                    <div className="flex items-center space-x-2">
+                      <div className="avatar">
+                        <div className="w-8 rounded-full">
+                          <img src={player.avatar} alt={player.name} />
+                        </div>
                       </div>
+                      <span>
+                        {player.name}{" "}
+                        {isYou && (
+                          <span className="badge badge-success ml-2">You</span>
+                        )}
+                      </span>
                     </div>
-                    <span>{player.name}</span>
-                  </div>
-                </td>
-                <td>{player.stats["24h"]}</td>
-                <td>{player.stats["7d"]}</td>
-                <td>{player.stats["30d"]}</td>
-                <td>{player.stats["allTime"]}</td>
-              </tr>
-            ))}
+                  </td>
+                  <td>{player.stats["24h"]}</td>
+                  <td>{player.stats["7d"]}</td>
+                  <td>{player.stats["30d"]}</td>
+                  <td>{player.stats.allTime}</td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
