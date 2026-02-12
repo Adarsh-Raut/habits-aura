@@ -57,12 +57,22 @@ model VerificationToken {
 }
 
 model Habit {
-  id          String   @id @default(cuid())
-  title       String // Title of the habit
-  isCompleted Boolean  @default(false) // Status of completion
-  days        String[] // Array of days associated with the habit
-  userId      String // Foreign key to the User model
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id          String            @id @default(cuid())
+  title       String
+  days        String[]
+  userId      String
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  completions HabitCompletion[]
 
   @@map("habits")
+}
+
+model HabitCompletion {
+  id      String   @id @default(cuid())
+  habitId String
+  date    DateTime
+  habit   Habit    @relation(fields: [habitId], references: [id], onDelete: Cascade)
+
+  @@unique([habitId, date])
+  @@map("habit_completions")
 }

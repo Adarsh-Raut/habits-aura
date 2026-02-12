@@ -11,23 +11,23 @@ export default function CreateHabitForm() {
   const [inputValue, setInputValue] = useState("");
   const [selectedHabit, setSelectedHabit] = useState("");
   const [selectedDays, setSelectedDays] = useState<string[]>([
+    "SUN",
     "MON",
     "TUE",
     "WED",
     "THU",
     "FRI",
     "SAT",
-    "SUN",
   ]);
 
   const dayDisplayMap = {
+    SUN: "S",
     MON: "M",
     TUE: "T",
     WED: "W",
     THU: "T",
     FRI: "F",
     SAT: "S",
-    SUN: "S",
   };
 
   const habitOptions: string[] = [
@@ -45,7 +45,7 @@ export default function CreateHabitForm() {
 
   const toggleDay = (day: string) => {
     setSelectedDays((prev) =>
-      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
+      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day],
     );
   };
 

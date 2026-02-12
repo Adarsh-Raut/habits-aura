@@ -33,7 +33,7 @@ export default function Habit() {
 
     setLoadingHabitId(id);
     const updatedHabits = habits?.map((habit) =>
-      habit.id === id ? { ...habit, isCompleted: !habit.isCompleted } : habit
+      habit.id === id ? { ...habit, isCompleted: !habit.isCompleted } : habit,
     );
     setHabits(updatedHabits);
 

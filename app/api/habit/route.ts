@@ -3,27 +3,44 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "../auth/[...nextauth]/route"; // Update to your auth configuration path
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { getTodayDate, getTodayKey } from "@/lib/date";
 
 export async function GET() {
-  try {
-    // Fetch all habits from the database
-    const habits = await prisma.habit.findMany({
-      select: {
-        id: true,
-        title: true,
-        isCompleted: true,
-        days: true,
-      },
-    });
-
-    return NextResponse.json(habits, { status: 200 });
-  } catch (error) {
-    console.error("Error fetching habits:", error);
-    return NextResponse.json(
-      { error: "An unexpected error occurred. Please try again later." },
-      { status: 500 }
-    );
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.email) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const user = await prisma.user.findUnique({
+    where: { email: session.user.email },
+  });
+
+  if (!user) {
+    return NextResponse.json({ error: "User not found" }, { status: 404 });
+  }
+
+  const todayKey = getTodayKey();
+  const todayDate = getTodayDate();
+
+  const habits = await prisma.habit.findMany({
+    where: {
+      userId: user.id,
+      days: { has: todayKey }, // 🔁 repeat logic
+    },
+    include: {
+      completions: {
+        where: { date: todayDate },
+      },
+    },
+  });
+
+  const result = habits.map((habit) => ({
+    id: habit.id,
+    title: habit.title,
+    isCompleted: habit.completions.length > 0,
+  }));
+
+  return NextResponse.json(result);
 }
 
 export async function POST(req: Request) {
@@ -44,7 +61,7 @@ export async function POST(req: Request) {
           error:
             "Invalid input. Title must be a string and days must be an array of strings.",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -53,7 +70,7 @@ export async function POST(req: Request) {
     if (!session?.user?.email) {
       return NextResponse.json(
         { error: "Unauthorized. Please log in to create a habit." },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -82,7 +99,7 @@ export async function POST(req: Request) {
     console.error("Error creating habit:", error);
     return NextResponse.json(
       { error: "An unexpected error occurred. Please try again later." },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -1,41 +1,34 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { revalidatePath } from "next/cache";
+import { getTodayDate } from "@/lib/date";
 
 export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { id: string } }
+  req: Request,
+  { params }: { params: { id: string } },
 ) {
-  try {
-    const { id } = params;
-    const body = await request.json();
-    const { isCompleted } = body;
+  const today = getTodayDate();
 
-    if (typeof isCompleted !== "boolean") {
-      return NextResponse.json(
-        { error: "Invalid input. isCompleted must be a boolean." },
-        { status: 400 }
-      );
-    }
+  const existing = await prisma.habitCompletion.findUnique({
+    where: {
+      habitId_date: {
+        habitId: params.id,
+        date: today,
+      },
+    },
+  });
 
-    const updatedHabit = await prisma.habit.update({
-      where: { id },
-      data: { isCompleted },
+  if (existing) {
+    await prisma.habitCompletion.delete({
+      where: { id: existing.id },
     });
-    revalidatePath("/");
-    return NextResponse.json(updatedHabit, { status: 200 });
-  } catch (error) {
-    console.error("Error updating habit:", error);
-
-    if (error instanceof Error && "code" in error) {
-      if (error.code === "P2025") {
-        return NextResponse.json({ error: "Habit not found" }, { status: 404 });
-      }
-    }
-
-    return NextResponse.json(
-      { error: "Failed to update habit" },
-      { status: 500 }
-    );
+  } else {
+    await prisma.habitCompletion.create({
+      data: {
+        habitId: params.id,
+        date: today,
+      },
+    });
   }
+
+  return NextResponse.json({ success: true });
 }
