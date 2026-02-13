@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getTodayDate } from "@/lib/date";
 import { AURA_DELTA } from "@/lib/aura";
+import { getServerSession } from "next-auth";
+import { authOptions } from "../../auth/[...nextauth]/route";
 
 export async function PATCH(
   req: Request,
@@ -27,9 +29,7 @@ export async function PATCH(
     },
   });
 
-  // STATE MACHINE
   if (!existing) {
-    // ⬜ → ✅
     await prisma.$transaction([
       prisma.habitCompletion.create({
         data: {
@@ -44,7 +44,6 @@ export async function PATCH(
       }),
     ]);
   } else if (existing.action === "COMPLETED") {
-    // ✅ → ❌
     await prisma.$transaction([
       prisma.habitCompletion.update({
         where: { id: existing.id },
@@ -56,7 +55,6 @@ export async function PATCH(
       }),
     ]);
   } else {
-    // ❌ → ⬜
     await prisma.$transaction([
       prisma.habitCompletion.delete({
         where: { id: existing.id },
@@ -67,6 +65,32 @@ export async function PATCH(
       }),
     ]);
   }
+
+  return NextResponse.json({ success: true });
+}
+
+export async function DELETE(
+  req: Request,
+  { params }: { params: { id: string } },
+) {
+  const session = await getServerSession(authOptions);
+
+  if (!session?.user?.email) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const habit = await prisma.habit.findUnique({
+    where: { id: params.id },
+    include: { user: true },
+  });
+
+  if (!habit || habit.user.email !== session.user.email) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  await prisma.habit.delete({
+    where: { id: params.id },
+  });
 
   return NextResponse.json({ success: true });
 }

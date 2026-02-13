@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "../auth/[...nextauth]/route"; // Update to your auth configuration path
+import { authOptions } from "../auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { getTodayDate, getTodayKey } from "@/lib/date";
@@ -25,7 +25,7 @@ export async function GET() {
   const habits = await prisma.habit.findMany({
     where: {
       userId: user.id,
-      days: { has: todayKey }, // 🔁 repeat logic
+      days: { has: todayKey },
     },
     include: {
       completions: {
@@ -49,12 +49,10 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    // Parse the request body
     const body = await req.json();
     console.log(body);
     const { title, days } = body;
 
-    // Validate input
     if (
       !title ||
       !Array.isArray(days) ||
@@ -69,7 +67,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // Get the currently logged-in user's session
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
       return NextResponse.json(
@@ -78,7 +75,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // Find the user in the database
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
     });
@@ -87,7 +83,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "User not found." }, { status: 404 });
     }
 
-    // Create the habit in the database
     const habit = await prisma.habit.create({
       data: {
         title,

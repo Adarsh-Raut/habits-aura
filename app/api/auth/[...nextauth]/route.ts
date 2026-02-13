@@ -5,12 +5,10 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-// Extend the built-in session type
 declare module "next-auth" {
   interface Session extends DefaultSession {
     user: {
       id: string;
-      // Add any other properties you want to include
     } & DefaultSession["user"];
   }
 }

@@ -29,10 +29,26 @@ export default function Habit() {
     fetchHabits();
   }, []);
 
+  const deleteHabit = async (id: string) => {
+    setHabits((prev) => prev.filter((habit) => habit.id !== id));
+
+    try {
+      const res = await fetch(`/api/habit/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) throw new Error();
+    } catch {
+      // rollback
+      const res = await fetch("/api/habit");
+      const data = await res.json();
+      setHabits(data);
+    }
+  };
+
   const toggleHabit = async (id: string) => {
     setLoadingHabitId(id);
 
-    // optimistic UI update
     setHabits((prev) =>
       prev.map((habit) =>
         habit.id === id
@@ -49,7 +65,6 @@ export default function Habit() {
       if (!response.ok) throw new Error();
     } catch (error) {
       console.error(error);
-      // rollback from source of truth
       const response = await fetch("/api/habit");
       const data = await response.json();
       setHabits(data);
@@ -71,11 +86,29 @@ export default function Habit() {
               isCompleted ? "opacity-50" : "opacity-100"
             }`}
           >
-            {/* LEFT SIDE */}
             <div className="flex items-center gap-4">
-              <button className="btn btn-ghost btn-sm btn-circle">
-                <BsThreeDotsVertical className="w-4 h-4 text-gray-400" />
-              </button>
+              <div className="dropdown dropdown-bottom">
+                <button
+                  tabIndex={0}
+                  className="btn btn-ghost btn-sm btn-circle"
+                >
+                  <BsThreeDotsVertical className="w-4 h-4 text-gray-400" />
+                </button>
+
+                <ul
+                  tabIndex={0}
+                  className="dropdown-content menu p-2 shadow bg-base-200 rounded-box w-40"
+                >
+                  <li>
+                    <button
+                      onClick={() => deleteHabit(habit.id)}
+                      className="text-error"
+                    >
+                      Delete habit
+                    </button>
+                  </li>
+                </ul>
+              </div>
 
               <span
                 className={`text-gray-200 text-lg font-extrabold decoration-2 ${
@@ -86,7 +119,6 @@ export default function Habit() {
               </span>
             </div>
 
-            {/* RIGHT SIDE – checkbox look */}
             <button
               onClick={() => toggleHabit(habit.id)}
               disabled={loadingHabitId === habit.id}
