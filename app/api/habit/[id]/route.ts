@@ -27,23 +27,39 @@ export async function PATCH(
     },
   });
 
-  if (existing) {
-    await prisma.$transaction([
-      prisma.habitCompletion.delete({
-        where: { id: existing.id },
-      }),
-      prisma.user.update({
-        where: { id: habit.userId },
-        data: { auraPoints: { decrement: AURA_DELTA } },
-      }),
-    ]);
-  } else {
+  // STATE MACHINE
+  if (!existing) {
+    // ⬜ → ✅
     await prisma.$transaction([
       prisma.habitCompletion.create({
         data: {
           habitId: params.id,
           date: today,
+          action: "COMPLETED",
         },
+      }),
+      prisma.user.update({
+        where: { id: habit.userId },
+        data: { auraPoints: { increment: AURA_DELTA } },
+      }),
+    ]);
+  } else if (existing.action === "COMPLETED") {
+    // ✅ → ❌
+    await prisma.$transaction([
+      prisma.habitCompletion.update({
+        where: { id: existing.id },
+        data: { action: "SKIPPED" },
+      }),
+      prisma.user.update({
+        where: { id: habit.userId },
+        data: { auraPoints: { decrement: AURA_DELTA * 2 } },
+      }),
+    ]);
+  } else {
+    // ❌ → ⬜
+    await prisma.$transaction([
+      prisma.habitCompletion.delete({
+        where: { id: existing.id },
       }),
       prisma.user.update({
         where: { id: habit.userId },

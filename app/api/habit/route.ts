@@ -34,11 +34,15 @@ export async function GET() {
     },
   });
 
-  const result = habits.map((habit) => ({
-    id: habit.id,
-    title: habit.title,
-    isCompleted: habit.completions.length > 0,
-  }));
+  const result = habits.map((habit) => {
+    const completion = habit.completions[0];
+
+    return {
+      id: habit.id,
+      title: habit.title,
+      status: completion?.action ?? "NONE",
+    };
+  });
 
   return NextResponse.json(result);
 }

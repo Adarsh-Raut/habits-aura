@@ -68,11 +68,17 @@ model Habit {
   @@map("habits")
 }
 
+enum HabitAction {
+  COMPLETED
+  SKIPPED
+}
+
 model HabitCompletion {
-  id      String   @id @default(cuid())
+  id      String      @id @default(cuid())
   habitId String
   date    DateTime
-  habit   Habit    @relation(fields: [habitId], references: [id], onDelete: Cascade)
+  action  HabitAction
+  habit   Habit       @relation(fields: [habitId], references: [id], onDelete: Cascade)
 
   @@unique([habitId, date])
   @@map("habit_completions")
