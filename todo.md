@@ -2,7 +2,8 @@
 
 <!-- add missed habit click behavior -->
 
-delete habit
+<!-- delete habit -->
+
 days streak feature
 Aura progress bar
 github like streak graph on calendar

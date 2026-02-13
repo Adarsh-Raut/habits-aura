@@ -63,6 +63,7 @@ model Habit {
   days        String[]
   userId      String
   user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime          @default(now())
   completions HabitCompletion[]
 
   @@map("habits")
@@ -77,9 +78,9 @@ model HabitCompletion {
   id      String      @id @default(cuid())
   habitId String
   date    DateTime
+  dateKey String
   action  HabitAction
   habit   Habit       @relation(fields: [habitId], references: [id], onDelete: Cascade)
 
-  @@unique([habitId, date])
-  @@map("habit_completions")
+  @@unique([habitId, dateKey])
 }

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getTodayDate } from "@/lib/date";
+import { getTodayDate, getTodayDateKey } from "@/lib/date";
 import { AURA_DELTA } from "@/lib/aura";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../auth/[...nextauth]/route";
@@ -10,6 +10,7 @@ export async function PATCH(
   { params }: { params: { id: string } },
 ) {
   const today = getTodayDate();
+  const todayKey = getTodayDateKey();
 
   const habit = await prisma.habit.findUnique({
     where: { id: params.id },
@@ -22,9 +23,9 @@ export async function PATCH(
 
   const existing = await prisma.habitCompletion.findUnique({
     where: {
-      habitId_date: {
+      habitId_dateKey: {
         habitId: params.id,
-        date: today,
+        dateKey: todayKey,
       },
     },
   });
@@ -35,6 +36,7 @@ export async function PATCH(
         data: {
           habitId: params.id,
           date: today,
+          dateKey: todayKey,
           action: "COMPLETED",
         },
       }),

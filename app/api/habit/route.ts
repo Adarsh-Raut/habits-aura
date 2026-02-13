@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "../auth/[...nextauth]/route";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import { getTodayDate, getTodayKey } from "@/lib/date";
+import { getTodayDate, getTodayDateKey, getTodayWeekdayKey } from "@/lib/date";
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -19,19 +19,20 @@ export async function GET() {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
-  const todayKey = getTodayKey();
-  const todayDate = getTodayDate();
+  const today = getTodayDate();
+  const todayWeekday = getTodayWeekdayKey();
 
   const habits = await prisma.habit.findMany({
     where: {
       userId: user.id,
-      days: { has: todayKey },
+      days: { has: todayWeekday },
     },
     include: {
       completions: {
-        where: { date: todayDate },
+        where: { date: today },
       },
     },
+    orderBy: { createdAt: "asc" },
   });
 
   const result = habits.map((habit) => {
@@ -50,7 +51,6 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    console.log(body);
     const { title, days } = body;
 
     if (
@@ -58,21 +58,12 @@ export async function POST(req: Request) {
       !Array.isArray(days) ||
       days.some((day) => typeof day !== "string")
     ) {
-      return NextResponse.json(
-        {
-          error:
-            "Invalid input. Title must be a string and days must be an array of strings.",
-        },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Invalid input" }, { status: 400 });
     }
 
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
-      return NextResponse.json(
-        { error: "Unauthorized. Please log in to create a habit." },
-        { status: 401 },
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const user = await prisma.user.findUnique({
@@ -80,7 +71,7 @@ export async function POST(req: Request) {
     });
 
     if (!user) {
-      return NextResponse.json({ error: "User not found." }, { status: 404 });
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
     const habit = await prisma.habit.create({
@@ -95,9 +86,9 @@ export async function POST(req: Request) {
 
     return NextResponse.json(habit, { status: 201 });
   } catch (error) {
-    console.error("Error creating habit:", error);
+    console.error("POST /api/habit error:", error);
     return NextResponse.json(
-      { error: "An unexpected error occurred. Please try again later." },
+      { error: "Internal server error" },
       { status: 500 },
     );
   }

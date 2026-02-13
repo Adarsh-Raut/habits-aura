@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { FaRegCheckSquare } from "react-icons/fa";
 import { GoTrophy } from "react-icons/go";
+import { IoStatsChart } from "react-icons/io5";
 export default function Sidebar() {
   const pathname = usePathname();
 
@@ -18,6 +19,12 @@ export default function Sidebar() {
       name: "LEADERBOARD",
       icon: GoTrophy,
       path: "/leaderboard",
+      isActive: false,
+    },
+    {
+      name: "STATS",
+      icon: IoStatsChart,
+      path: "/stats",
       isActive: false,
     },
   ];

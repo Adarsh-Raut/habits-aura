@@ -23,6 +23,13 @@ export default function Habit() {
   useEffect(() => {
     const fetchHabits = async () => {
       const response = await fetch("/api/habit");
+
+      if (!response.ok) {
+        const text = await response.text();
+        console.error("API error:", text);
+        return;
+      }
+
       const data = await response.json();
       setHabits(data);
     };

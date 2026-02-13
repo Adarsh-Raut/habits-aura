@@ -95,14 +95,12 @@ export default function CreateHabitForm() {
   return (
     <div className="min-h-screen bg-base-300 p-4">
       <div className="max-w-md mx-auto">
-        {/* Back Button */}
         <Link href="/" className="btn btn-ghost gap-2 mb-6">
           <FaArrowLeft className="w-4 h-4" />
           BACK
         </Link>
 
         <form onSubmit={handleSubmit} className="card bg-neutral p-6">
-          {/* Habit Input */}
           <div className="mb-6">
             <label className="text-lg mb-2 block">My new habit...</label>
             <input
@@ -114,7 +112,6 @@ export default function CreateHabitForm() {
             />
           </div>
 
-          {/* Quick Select Habits */}
           <div className="flex flex-wrap gap-2 mb-6">
             {habitOptions.map((option) => (
               <button
@@ -128,7 +125,6 @@ export default function CreateHabitForm() {
             ))}
           </div>
 
-          {/* Repeat Selector */}
           <div className="mb-6">
             <label className="text-lg mb-2 mr-4">Repeat</label>
             <select className="select select-bordered">
@@ -137,7 +133,6 @@ export default function CreateHabitForm() {
             </select>
           </div>
 
-          {/* Day Selector */}
           <div className="flex justify-between mb-6">
             {Object.entries(dayDisplayMap).map(([fullDay, shortDay]) => (
               <div key={fullDay} className="flex flex-col items-center">
@@ -152,7 +147,6 @@ export default function CreateHabitForm() {
             ))}
           </div>
 
-          {/* Submit Button */}
           <button
             type="submit"
             className="btn bg-[#05C26A] text-white btn-block"
