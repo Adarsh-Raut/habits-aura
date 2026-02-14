@@ -8,6 +8,9 @@
 
 <!-- github like streak graph on calendar -->
 
-account logout button
+<!-- account logout button -->
+
+make it mobile friendly and responsive
+
 Aura progress bar
 add habit icons for related tasks

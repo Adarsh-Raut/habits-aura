@@ -2,6 +2,7 @@ import Leaderboard from "../components/LeaderBoard";
 import Sidebar from "../components/Sidebar";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../api/auth/[...nextauth]/route";
+import ClientRefresh from "./ClientRefresh";
 
 type LeaderboardApiUser = {
   id: string;
@@ -40,25 +41,27 @@ export default async function Page() {
 
   return (
     <main className="flex h-screen bg-[#1E2330]">
+      <ClientRefresh />
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
         <div className="flex-1 overflow-auto p-4 space-y-6">
-          {/* YOU CARD */}
           {currentUser && (
             <div className="stats shadow bg-neutral">
               <div className="stat">
-                <div className="stat-title">Your Rank</div>
+                <div className="stat-title text-[1.2rem]">Your Rank</div>
                 <div className="stat-value text-success">
                   #{currentUser.rank}
                 </div>
-                <div className="stat-desc">
-                  Aura Points: {currentUser.auraPoints}
+                <div className="stat-desc text-[1.1rem]">
+                  Aura Points:{" "}
+                  <span className="text-[#ffbf46]">
+                    {currentUser.auraPoints}
+                  </span>
                 </div>
               </div>
             </div>
           )}
 
-          {/* LEADERBOARD */}
           <Leaderboard
             data={leaderboardData}
             currentUserId={session?.user?.id}

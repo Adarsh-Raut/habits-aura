@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import HabitHeatmap from "./HabitHeatmap";
+import { FaFireAlt, FaTrophy } from "react-icons/fa";
 import { stat } from "fs";
 
 type Habit = {
@@ -79,19 +80,31 @@ export default function StatsView() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div className="stats shadow bg-neutral">
               <div className="stat">
-                <div className="stat-title">Current Streak</div>
-                <div className="stat-value text-success">
-                  🔥 {stats.currentStreak}
+                <div className="stat-title text-sm uppercase tracking-wide">
+                  Current Streak
                 </div>
-                <div className="stat-desc">Days in a row</div>
+
+                <div className="stat-value text-success flex items-center gap-2">
+                  <FaFireAlt className="text-orange-600" />
+                  {stats.currentStreak}
+                </div>
+
+                <div className="stat-desc text-sm">Days in a row</div>
               </div>
             </div>
 
             <div className="stats shadow bg-neutral">
               <div className="stat">
-                <div className="stat-title">Longest Streak</div>
-                <div className="stat-value">🏆 {stats.longestStreak}</div>
-                <div className="stat-desc">Best consistency</div>
+                <div className="stat-title text-sm uppercase tracking-wide">
+                  Longest Streak
+                </div>
+
+                <div className="stat-value flex items-center gap-2">
+                  <FaTrophy className="text-warning" />
+                  {stats.longestStreak}
+                </div>
+
+                <div className="stat-desc text-sm">Best consistency</div>
               </div>
             </div>
           </div>

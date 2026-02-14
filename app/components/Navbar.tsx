@@ -12,7 +12,6 @@ const Navbar = () => {
 
   return (
     <nav className="navbar bg-base-100">
-      {/* LEFT */}
       <div className="flex-1 px-4">
         <DiAtom className="h-10 w-10" />
 
@@ -22,10 +21,10 @@ const Navbar = () => {
 
         <Link href="/create" className="btn btn-ghost">
           <FaPlus className="h-5 w-5" />
+          <span className="hidden sm:inline">New</span>
         </Link>
       </div>
 
-      {/* RIGHT */}
       {session?.user && (
         <div className="flex-none px-4">
           <div className="dropdown dropdown-end">
@@ -33,7 +32,6 @@ const Navbar = () => {
               tabIndex={0}
               className="btn btn-ghost gap-2 px-2 normal-case"
             >
-              {/* Avatar */}
               <div className="avatar">
                 <div className="w-8 rounded-full">
                   <img
@@ -44,12 +42,10 @@ const Navbar = () => {
                 </div>
               </div>
 
-              {/* Name */}
               <span className="hidden sm:inline font-medium">
                 {session.user.name}
               </span>
 
-              {/* Gear */}
               <GoGear className="h-5 w-5 opacity-70" />
             </label>
 
@@ -57,7 +53,6 @@ const Navbar = () => {
               tabIndex={0}
               className="dropdown-content menu bg-base-200 border border-base-300 rounded-xl w-48 p-2 shadow-x hover:bg-base-300"
             >
-              {/* User info */}
               <li className="pointer-events-none">
                 <div className="flex flex-col gap-0.5">
                   <span className="font-semibold text-base-content">
@@ -71,7 +66,6 @@ const Navbar = () => {
 
               <li className="divider my-1" />
 
-              {/* Logout */}
               <li>
                 <button
                   onClick={() =>

@@ -4,6 +4,7 @@ import { getTodayDate, getTodayDateKey } from "@/lib/date";
 import { AURA_DELTA } from "@/lib/aura";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../auth/[...nextauth]/route";
+import { revalidatePath } from "next/cache";
 
 export async function PATCH(
   req: Request,
@@ -67,6 +68,9 @@ export async function PATCH(
       }),
     ]);
   }
+  revalidatePath("/leaderboard");
+  revalidatePath("/");
+  revalidatePath("/stats");
 
   return NextResponse.json({ success: true });
 }
