@@ -14,13 +14,23 @@ export async function GET() {
     },
   });
 
-  const leaderboard = users.map((user, index) => ({
-    rank: index + 1,
-    id: user.id,
-    name: user.name ?? "Anonymous",
-    avatar: user.image ?? "/avatar.png",
-    auraPoints: user.auraPoints,
-  }));
+  const leaderboard = users.map((user, index) => {
+    const name = user.name ?? "Anonymous";
+
+    return {
+      rank: index + 1,
+      id: user.id,
+      name,
+      auraPoints: user.auraPoints,
+
+      avatar:
+        user.image && user.image.trim() !== ""
+          ? user.image
+          : `https://ui-avatars.com/api/?name=${encodeURIComponent(
+              name,
+            )}&background=1f2937&color=fff`,
+    };
+  });
 
   return NextResponse.json(leaderboard);
 }

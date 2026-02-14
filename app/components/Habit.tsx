@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
+import { motion, AnimatePresence, type Variants } from "framer-motion";
 
 interface Habit {
   id: string;
@@ -14,6 +15,29 @@ const nextStatusMap: Record<Habit["status"], Habit["status"]> = {
   NONE: "COMPLETED",
   COMPLETED: "SKIPPED",
   SKIPPED: "NONE",
+};
+
+const titleVariants: Variants = {
+  active: {
+    scale: 1,
+    opacity: 1,
+    color: "#E5E7EB",
+    transition: {
+      type: "spring",
+      stiffness: 260,
+      damping: 20,
+    },
+  },
+  completed: {
+    scale: 0.96,
+    opacity: 0.55,
+    color: "#9CA3AF",
+    transition: {
+      type: "spring",
+      stiffness: 220,
+      damping: 26,
+    },
+  },
 };
 
 export default function Habit() {
@@ -98,16 +122,38 @@ export default function Habit() {
                   onClick={(e) => openMenu(e, habit.id)}
                   className="btn btn-ghost btn-sm btn-circle"
                 >
-                  <BsThreeDotsVertical className="w-4 h-4 text-gray-400" />
+                  <BsThreeDotsVertical className="w-5 h-5 text-gray-400" />
                 </button>
 
-                <span
-                  className={`truncate font-semibold ${
-                    isCompleted ? "line-through text-gray-400" : "text-gray-200"
-                  } ${isSkipped ? "text-error" : ""}`}
+                <motion.span
+                  layout
+                  variants={titleVariants}
+                  initial={false}
+                  animate={isCompleted ? "completed" : "active"}
+                  className={`
+      relative truncate font-semibold text-base sm:text-lg
+      flex items-center gap-2
+      ${isSkipped ? "text-error" : ""}
+    `}
                 >
                   {habit.title}
-                </span>
+
+                  <AnimatePresence>
+                    {isCompleted && (
+                      <motion.span
+                        initial={{ scaleX: 0 }}
+                        animate={{ scaleX: 1 }}
+                        exit={{ scaleX: 0 }}
+                        transition={{
+                          type: "spring",
+                          stiffness: 260,
+                          damping: 24,
+                        }}
+                        className="absolute left-0 top-1/2 h-[2px] w-full bg-current origin-left"
+                      />
+                    )}
+                  </AnimatePresence>
+                </motion.span>
               </div>
 
               <button
@@ -137,11 +183,10 @@ export default function Habit() {
         })}
       </div>
 
-      {/* FIXED CONTEXT MENU */}
       {menuFor && menuPos && (
         <div
           ref={menuRef}
-          className="fixed z-[9999] bg-base-200 rounded-lg shadow-xl w-40"
+          className="fixed z-[9999] bg-base-200 rounded-lg shadow-xl w-20"
           style={{
             top: menuPos.top,
             left: menuPos.left,
@@ -151,7 +196,7 @@ export default function Habit() {
             className="w-full text-left px-4 py-2 text-error hover:bg-base-300"
             onClick={() => deleteHabit(menuFor)}
           >
-            Delete habit
+            Delete
           </button>
         </div>
       )}

@@ -1,3 +1,5 @@
+import Avatar from "./Avatar";
+
 const Leaderboard = ({ data, currentUserId }) => {
   return (
     <div className="bg-neutral rounded-xl shadow p-4 sm:p-6">
@@ -28,19 +30,19 @@ const Leaderboard = ({ data, currentUserId }) => {
                   <td>{index + 1}</td>
 
                   <td>
-                    <div className="flex items-center gap-2">
-                      <div className="avatar">
-                        <div className="w-8 rounded-full">
-                          <img src={player.avatar} alt={player.name} />
-                        </div>
-                      </div>
+                    <div className="flex items-center gap-3 min-w-0">
+                      <Avatar
+                        src={player.avatar}
+                        name={player.name}
+                        size={32}
+                      />
 
-                      <span className="truncate max-w-[120px] sm:max-w-none">
-                        {player.name}
+                      <div className="truncate">
+                        <span className="font-medium">{player.name}</span>
                         {isYou && (
                           <span className="badge badge-success ml-2">You</span>
                         )}
-                      </span>
+                      </div>
                     </div>
                   </td>
 
