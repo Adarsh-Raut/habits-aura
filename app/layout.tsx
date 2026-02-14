@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import Navbar from "./components/Navbar";
+import Sidebar from "./components/Sidebar";
 import Providers from "./providers";
 
 const geistSans = localFont({
@@ -32,8 +33,29 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Providers>
-          <Navbar />
-          {children}
+          <div className="drawer lg:drawer-open min-h-screen bg-[#1E2330]">
+            {/* IMPORTANT: unchecked by default */}
+            <input
+              id="sidebar-drawer"
+              type="checkbox"
+              className="drawer-toggle"
+            />
+
+            {/* CONTENT */}
+            <div className="drawer-content flex flex-col relative z-0">
+              <Navbar />
+              <main className="flex-1 overflow-y-auto p-4">{children}</main>
+            </div>
+
+            {/* SIDEBAR */}
+            <div className="drawer-side">
+              <label
+                htmlFor="sidebar-drawer"
+                className="drawer-overlay lg:hidden"
+              />
+              <Sidebar />
+            </div>
+          </div>
         </Providers>
       </body>
     </html>

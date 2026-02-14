@@ -1,5 +1,4 @@
 import Leaderboard from "../components/LeaderBoard";
-import Sidebar from "../components/Sidebar";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../api/auth/[...nextauth]/route";
 import ClientRefresh from "./ClientRefresh";
@@ -24,7 +23,6 @@ export default async function Page() {
   }
 
   const users: LeaderboardApiUser[] = await res.json();
-
   const currentUser = users.find((u) => u.id === session?.user?.id);
 
   const leaderboardData = users.map((user) => ({
@@ -40,34 +38,32 @@ export default async function Page() {
   }));
 
   return (
-    <main className="flex h-screen bg-[#1E2330]">
+    <>
       <ClientRefresh />
-      <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="flex-1 overflow-auto p-4 space-y-6">
-          {currentUser && (
-            <div className="stats shadow bg-neutral">
-              <div className="stat">
-                <div className="stat-title text-[1.2rem]">Your Rank</div>
-                <div className="stat-value text-success">
-                  #{currentUser.rank}
-                </div>
-                <div className="stat-desc text-[1.1rem]">
-                  Aura Points:{" "}
-                  <span className="text-[#ffbf46]">
-                    {currentUser.auraPoints}
-                  </span>
-                </div>
-              </div>
-            </div>
-          )}
 
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        {currentUser && (
+          <div className="bg-neutral rounded-xl p-4">
+            <div className="text-[1.2rem] opacity-60">Your Rank</div>
+            <div className="text-3xl font-bold text-success mt-1">
+              #{currentUser.rank}
+            </div>
+            <div className="text-[1.1rem] mt-1">
+              Aura Points{" "}
+              <span className="text-[#ffbf46] font-semibold">
+                {currentUser.auraPoints}
+              </span>
+            </div>
+          </div>
+        )}
+
+        <div className="md:col-span-2">
           <Leaderboard
             data={leaderboardData}
             currentUserId={session?.user?.id}
           />
         </div>
       </div>
-    </main>
+    </>
   );
 }

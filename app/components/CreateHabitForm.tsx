@@ -10,6 +10,7 @@ export default function CreateHabitForm() {
   const router = useRouter();
   const [inputValue, setInputValue] = useState("");
   const [selectedHabit, setSelectedHabit] = useState("");
+  const [loading, setLoading] = useState(false);
   const [selectedDays, setSelectedDays] = useState<string[]>([
     "SUN",
     "MON",
@@ -63,46 +64,67 @@ export default function CreateHabitForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const habitTitle = inputValue || selectedHabit;
+    const habitTitle = inputValue.trim() || selectedHabit;
 
     if (!habitTitle) {
-      console.error("Please enter a habit title");
+      alert("Please enter a habit name");
       return;
     }
-    confetti({
-      particleCount: 100,
-      spread: 70,
-      origin: { y: 0.6 },
-    });
-    console.log({ selectedHabit, selectedDays });
-    const response = await fetch("/api/habit", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ title: habitTitle, days: selectedDays }),
-    });
-    const data = await response.json();
-    console.log(response, data);
-    if (response.ok) {
-      console.log("logged");
-      router.refresh();
-      router.push("/");
+
+    if (selectedDays.length === 0) {
+      alert("Select at least one day");
+      return;
     }
-    console.log(data);
+
+    try {
+      setLoading(true);
+
+      const response = await fetch("/api/habit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: habitTitle,
+          days: selectedDays,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to create habit");
+      }
+
+      confetti({
+        particleCount: 120,
+        spread: 80,
+        origin: { y: 0.7 },
+      });
+
+      setTimeout(() => {
+        router.refresh();
+        router.push("/");
+      }, 600);
+    } catch (err) {
+      console.error(err);
+      alert("Something went wrong. Try again.");
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-base-300 p-4">
+    <form
+      onSubmit={handleSubmit}
+      className="min-h-screen bg-base-300 px-3 py-6 sm:p-6"
+    >
       <div className="max-w-md mx-auto">
-        <Link href="/" className="btn btn-ghost gap-2 mb-6">
+        <Link href="/" className="btn btn-ghost gap-2 mb-4 sm:mb-6 w-fit">
           <FaArrowLeft className="w-4 h-4" />
-          BACK
+          Back
         </Link>
 
-        <form onSubmit={handleSubmit} className="card bg-neutral p-6">
-          <div className="mb-6">
-            <label className="text-lg mb-2 block">My new habit...</label>
+        <div className="card bg-neutral shadow-xl p-5 sm:p-6 space-y-6">
+          <div>
+            <label className="text-base sm:text-lg font-medium mb-2 block">
+              My new habit
+            </label>
             <input
               type="text"
               placeholder="Type here or choose below"
@@ -112,49 +134,55 @@ export default function CreateHabitForm() {
             />
           </div>
 
-          <div className="flex flex-wrap gap-2 mb-6">
-            {habitOptions.map((option) => (
-              <button
-                key={option}
-                type="button"
-                className={`badge badge-base-200 badge-lg cursor-pointer `}
-                onClick={() => handleHabitSelect(option)}
-              >
-                {option}
-              </button>
-            ))}
+          <div>
+            <p className="text-sm text-gray-400 mb-2">Quick suggestions</p>
+            <div className="flex flex-wrap gap-2">
+              {habitOptions.map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => handleHabitSelect(option)}
+                  className="badge badge-base-200 badge-lg px-3 py-3 sm:py-2 cursor-pointer"
+                >
+                  {option}
+                </button>
+              ))}
+            </div>
           </div>
 
-          <div className="mb-6">
-            <label className="text-lg mb-2 mr-4">Repeat</label>
-            <select className="select select-bordered">
-              <option>Daily</option>
-              <option>Weekly</option>
-            </select>
-          </div>
-
-          <div className="flex justify-between mb-6">
-            {Object.entries(dayDisplayMap).map(([fullDay, shortDay]) => (
-              <div key={fullDay} className="flex flex-col items-center">
-                <input
-                  type="checkbox"
-                  checked={selectedDays.includes(fullDay)}
-                  onChange={() => toggleDay(fullDay)}
-                  className="checkbox"
-                />
-                <span className="mt-1">{shortDay}</span>
-              </div>
-            ))}
+          <div>
+            <label className="text-sm sm:text-base font-medium mb-3 block">
+              Days
+            </label>
+            <div className="grid grid-cols-7 gap-2 text-center">
+              {Object.entries(dayDisplayMap).map(([fullDay, shortDay]) => (
+                <label
+                  key={fullDay}
+                  className="flex flex-col items-center gap-1 cursor-pointer"
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedDays.includes(fullDay)}
+                    onChange={() => toggleDay(fullDay)}
+                    className="checkbox checkbox-sm sm:checkbox-md"
+                  />
+                  <span className="text-xs sm:text-sm text-gray-300">
+                    {shortDay}
+                  </span>
+                </label>
+              ))}
+            </div>
           </div>
 
           <button
             type="submit"
-            className="btn bg-[#05C26A] text-white btn-block"
+            disabled={loading}
+            className="btn bg-[#05C26A] text-white btn-block disabled:opacity-60"
           >
-            CREATE HABIT
+            {loading ? "Creating..." : "Create Habit"}
           </button>
-        </form>
+        </div>
       </div>
-    </div>
+    </form>
   );
 }

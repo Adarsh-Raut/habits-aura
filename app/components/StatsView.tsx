@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import HabitHeatmap from "./HabitHeatmap";
 import { FaFireAlt, FaTrophy } from "react-icons/fa";
-import { stat } from "fs";
 
 type Habit = {
   id: string;
@@ -28,9 +27,7 @@ export default function StatsView() {
       .then((res) => res.json())
       .then((data) => {
         setHabits(data);
-        if (data.length > 0) {
-          setSelectedHabitId(data[0].id);
-        }
+        if (data.length > 0) setSelectedHabitId(data[0].id);
       });
   }, []);
 
@@ -39,32 +36,19 @@ export default function StatsView() {
 
     fetch(`/api/habit/${selectedHabitId}/stats`)
       .then((res) => res.json())
-      .then((data) => {
-        setStats(data);
-      });
+      .then(setStats);
   }, [selectedHabitId]);
 
   return (
-    <div className="max-w-6xl mx-auto space-y-10 text-gray-200">
-      {/* PAGE HEADER */}
-      <div className="space-y-2">
-        <h1 className="text-3xl font-bold">Habit Stats</h1>
-        <p className="text-gray-400">
-          Track streaks and consistency for each habit
-        </p>
-      </div>
-
-      {/* HABIT SELECTOR CARD */}
-      <div className="bg-neutral rounded-xl p-6 w-full max-w-md">
-        <label className="block text-sm mb-2 text-gray-400">Select Habit</label>
+    <div className="space-y-6 text-gray-200">
+      {/* ================= SELECT HABIT ================= */}
+      <div className="bg-neutral rounded-xl p-4 max-w-xl">
+        <label className="block text-sm mb-2 opacity-60">Select Habit</label>
         <select
           className="select select-bordered w-full"
           value={selectedHabitId ?? ""}
           onChange={(e) => setSelectedHabitId(e.target.value)}
         >
-          <option value="" disabled>
-            Choose a habit
-          </option>
           {habits.map((h) => (
             <option key={h.id} value={h.id}>
               {h.title}
@@ -73,55 +57,42 @@ export default function StatsView() {
         </select>
       </div>
 
-      {/* STATS + HEATMAP */}
       {stats && (
-        <div className="space-y-10">
-          {/* STREAK CARDS */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <div className="stats shadow bg-neutral">
-              <div className="stat">
-                <div className="stat-title text-sm uppercase tracking-wide">
-                  Current Streak
-                </div>
-
-                <div className="stat-value text-success flex items-center gap-2">
-                  <FaFireAlt className="text-orange-600" />
-                  {stats.currentStreak}
-                </div>
-
-                <div className="stat-desc text-sm">Days in a row</div>
+        <>
+          {/* ================= STREAKS ================= */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Current Streak */}
+            <div className="bg-neutral rounded-xl p-4">
+              <div className="text-sm opacity-60">Current Streak</div>
+              <div className="text-3xl font-bold text-success flex items-center gap-2">
+                <FaFireAlt className="text-orange-500" />
+                {stats.currentStreak}
               </div>
+              <div className="text-sm opacity-60">Days in a row</div>
             </div>
 
-            <div className="stats shadow bg-neutral">
-              <div className="stat">
-                <div className="stat-title text-sm uppercase tracking-wide">
-                  Longest Streak
-                </div>
-
-                <div className="stat-value flex items-center gap-2">
-                  <FaTrophy className="text-warning" />
-                  {stats.longestStreak}
-                </div>
-
-                <div className="stat-desc text-sm">Best consistency</div>
+            {/* Longest Streak */}
+            <div className="bg-neutral rounded-xl p-4">
+              <div className="text-sm opacity-60">Longest Streak</div>
+              <div className="text-3xl font-bold flex items-center gap-2">
+                <FaTrophy className="text-warning" />
+                {stats.longestStreak}
               </div>
+              <div className="text-sm opacity-60">Best consistency</div>
             </div>
           </div>
 
-          {/* HEATMAP CARD */}
-          <div className="bg-neutral rounded-xl p-6">
-            <div className="mb-4">
-              <h2 className="text-lg font-semibold">Yearly Consistency</h2>
-              <p className="text-sm text-gray-400">Calendar activity map</p>
-            </div>
+          {/* ================= HEATMAP ================= */}
+          <div className="bg-neutral rounded-xl p-4">
+            <h2 className="text-lg font-semibold mb-1">Yearly Consistency</h2>
+            <p className="text-sm opacity-60 mb-4">Calendar activity map</p>
 
             <HabitHeatmap
               calendar={stats.calendar}
               createdAt={stats.createdAt}
             />
           </div>
-        </div>
+        </>
       )}
     </div>
   );
