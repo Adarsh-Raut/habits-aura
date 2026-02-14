@@ -4,7 +4,10 @@
 
 <!-- delete habit -->
 
-days streak feature
+<!-- days streak feature -->
+
+<!-- github like streak graph on calendar -->
+
+account logout button
 Aura progress bar
-github like streak graph on calendar
 add habit icons for related tasks

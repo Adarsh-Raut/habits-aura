@@ -100,7 +100,7 @@ export default function StatsView() {
           <div className="bg-neutral rounded-xl p-6">
             <div className="mb-4">
               <h2 className="text-lg font-semibold">Yearly Consistency</h2>
-              <p className="text-sm text-gray-400">GitHub-style activity map</p>
+              <p className="text-sm text-gray-400">Calendar activity map</p>
             </div>
 
             <HabitHeatmap
