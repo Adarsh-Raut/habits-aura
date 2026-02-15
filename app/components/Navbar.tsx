@@ -64,12 +64,19 @@ const Navbar = () => {
 
             <ul
               tabIndex={0}
-              className="dropdown-content menu bg-base-200 border border-base-300 rounded-xl w-48 p-2 shadow-xl z-50"
+              className="
+    dropdown-content menu
+    bg-base-200 border border-base-300
+    rounded-xl w-56 p-2 shadow-xl z-50
+  "
             >
+              {/* USER INFO */}
               <li className="pointer-events-none">
-                <div className="flex flex-col gap-0.5">
-                  <span className="font-semibold">{session.user.name}</span>
-                  <span className="text-xs opacity-60">
+                <div className="flex flex-col gap-0.5 max-w-full">
+                  <span className="font-semibold truncate">
+                    {session.user.name}
+                  </span>
+                  <span className="text-xs opacity-60 truncate">
                     {session.user.email}
                   </span>
                 </div>
@@ -77,6 +84,7 @@ const Navbar = () => {
 
               <li className="divider my-1" />
 
+              {/* LOGOUT */}
               <li>
                 <button
                   onClick={() =>
@@ -84,10 +92,10 @@ const Navbar = () => {
                       callbackUrl: "/signin",
                     })
                   }
-                  className="text-error flex items-center gap-2"
+                  className="text-error flex items-center gap-2 w-full"
                 >
-                  <MdLogout className="h-4 w-4" />
-                  Logout
+                  <MdLogout className="h-4 w-4 shrink-0" />
+                  <span className="truncate">Logout</span>
                 </button>
               </li>
             </ul>
