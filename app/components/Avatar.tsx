@@ -5,7 +5,7 @@ import { useState } from "react";
 type AvatarProps = {
   src?: string | null;
   name: string;
-  size?: number; // px
+  size?: number;
 };
 
 export default function Avatar({ src, name, size = 32 }: AvatarProps) {

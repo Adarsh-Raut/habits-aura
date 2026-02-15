@@ -34,20 +34,17 @@ export default function RootLayout({
       >
         <Providers>
           <div className="drawer lg:drawer-open min-h-screen bg-[#1E2330]">
-            {/* IMPORTANT: unchecked by default */}
             <input
               id="sidebar-drawer"
               type="checkbox"
               className="drawer-toggle"
             />
 
-            {/* CONTENT */}
             <div className="drawer-content flex flex-col relative z-0">
               <Navbar />
               <main className="flex-1 overflow-y-auto p-4">{children}</main>
             </div>
 
-            {/* SIDEBAR */}
             <div className="drawer-side">
               <label
                 htmlFor="sidebar-drawer"

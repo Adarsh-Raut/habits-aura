@@ -41,7 +41,6 @@ export default function StatsView() {
 
   return (
     <div className="space-y-6 text-gray-200">
-      {/* ================= SELECT HABIT ================= */}
       <div className="bg-neutral rounded-xl p-4 max-w-xl">
         <label className="block text-sm mb-2 opacity-60">Select Habit</label>
         <select
@@ -59,7 +58,6 @@ export default function StatsView() {
 
       {stats && (
         <>
-          {/* ================= STREAKS ================= */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Current Streak */}
             <div className="bg-neutral rounded-xl p-4">
@@ -82,7 +80,6 @@ export default function StatsView() {
             </div>
           </div>
 
-          {/* ================= HEATMAP ================= */}
           <div className="bg-neutral rounded-xl p-4">
             <h2 className="text-lg font-semibold mb-1">Yearly Consistency</h2>
             <p className="text-sm opacity-60 mb-4">Calendar activity map</p>

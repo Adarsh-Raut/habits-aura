@@ -110,10 +110,7 @@ export default function CreateHabitForm() {
   };
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="min-h-screen bg-base-300 px-3 py-6 sm:p-6"
-    >
+    <form onSubmit={handleSubmit} className="min-h-screen px-3 py-6 sm:p-6">
       <div className="max-w-md mx-auto">
         <Link href="/" className="btn btn-ghost gap-2 mb-4 sm:mb-6 w-fit">
           <FaArrowLeft className="w-4 h-4" />
