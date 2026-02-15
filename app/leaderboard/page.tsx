@@ -2,6 +2,7 @@ import Leaderboard from "../components/LeaderBoard";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import ClientRefresh from "./ClientRefresh";
+import { headers } from "next/headers";
 
 type LeaderboardApiUser = {
   id: string;
@@ -14,7 +15,11 @@ type LeaderboardApiUser = {
 export default async function Page() {
   const session = await getServerSession(authOptions);
 
-  const res = await fetch(`${process.env.NEXTAUTH_URL}/api/leaderboard`, {
+  const headersList = headers();
+  const host = headersList.get("host");
+  const protocol = process.env.NODE_ENV === "development" ? "http" : "https";
+
+  const res = await fetch(`${protocol}://${host}/api/leaderboard`, {
     cache: "no-store",
   });
 
@@ -23,19 +28,21 @@ export default async function Page() {
   }
 
   const users: LeaderboardApiUser[] = await res.json();
+
   const currentUser = session
     ? users.find((u) => u.id === session.user.id)
     : null;
 
-  const leaderboardData = users.map((user) => ({
-    id: user.id,
-    name: user.name,
-    avatar: user.avatar,
+  const leaderboardData = users.map((u) => ({
+    id: u.id,
+    name: u.name,
+    avatar: u.avatar,
+    rank: u.rank,
     stats: {
-      "24h": user.auraPoints,
-      "7d": user.auraPoints,
-      "30d": user.auraPoints,
-      allTime: user.auraPoints,
+      "24h": u.auraPoints,
+      "7d": u.auraPoints,
+      "30d": u.auraPoints,
+      allTime: u.auraPoints,
     },
   }));
 
@@ -43,14 +50,14 @@ export default async function Page() {
     <>
       <ClientRefresh />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {currentUser && (
           <div className="bg-neutral rounded-xl p-4">
-            <div className="text-[1.2rem] opacity-60">Your Rank</div>
-            <div className="text-3xl font-bold text-success mt-1">
+            <div className="text-sm opacity-60">Your Rank</div>
+            <div className="text-3xl font-bold text-success">
               #{currentUser.rank}
             </div>
-            <div className="text-[1.1rem] mt-1">
+            <div className="text-sm mt-1">
               Aura Points{" "}
               <span className="text-[#ffbf46] font-semibold">
                 {currentUser.auraPoints}

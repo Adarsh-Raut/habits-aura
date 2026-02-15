@@ -1,4 +1,7 @@
+"use client";
+
 import Avatar from "./Avatar";
+import { memo } from "react";
 
 type LeaderboardStats = {
   "24h": number;
@@ -11,6 +14,7 @@ type LeaderboardPlayer = {
   id: string;
   name: string;
   avatar: string;
+  rank: number;
   stats: LeaderboardStats;
 };
 
@@ -18,6 +22,34 @@ type LeaderboardProps = {
   data: LeaderboardPlayer[];
   currentUserId?: string;
 };
+
+const LeaderboardRow = memo(
+  ({ player, isYou }: { player: LeaderboardPlayer; isYou: boolean }) => {
+    return (
+      <tr className={isYou ? "bg-success/20 font-semibold" : ""}>
+        <td>{player.rank}</td>
+
+        <td>
+          <div className="flex items-center gap-3 min-w-0">
+            <Avatar src={player.avatar} name={player.name} size={32} />
+
+            <div className="truncate">
+              <span className="font-medium">{player.name}</span>
+              {isYou && <span className="badge badge-success ml-2">You</span>}
+            </div>
+          </div>
+        </td>
+
+        <td className="hidden sm:table-cell">{player.stats["24h"]}</td>
+        <td className="hidden sm:table-cell">{player.stats["7d"]}</td>
+        <td className="hidden sm:table-cell">{player.stats["30d"]}</td>
+        <td className="font-medium text-[#ffbf46]">{player.stats.allTime}</td>
+      </tr>
+    );
+  },
+);
+
+LeaderboardRow.displayName = "LeaderboardRow";
 
 const Leaderboard = ({ data, currentUserId }: LeaderboardProps) => {
   return (
@@ -38,46 +70,13 @@ const Leaderboard = ({ data, currentUserId }: LeaderboardProps) => {
           </thead>
 
           <tbody>
-            {data.map((player, index) => {
-              const isYou = player.id === currentUserId;
-
-              return (
-                <tr
-                  key={player.id}
-                  className={isYou ? "bg-success/20 font-semibold" : ""}
-                >
-                  <td>{index + 1}</td>
-
-                  <td>
-                    <div className="flex items-center gap-3 min-w-0">
-                      <Avatar
-                        src={player.avatar}
-                        name={player.name}
-                        size={32}
-                      />
-
-                      <div className="truncate">
-                        <span className="font-medium">{player.name}</span>
-                        {isYou && (
-                          <span className="badge badge-success ml-2">You</span>
-                        )}
-                      </div>
-                    </div>
-                  </td>
-
-                  <td className="hidden sm:table-cell">
-                    {player.stats["24h"]}
-                  </td>
-                  <td className="hidden sm:table-cell">{player.stats["7d"]}</td>
-                  <td className="hidden sm:table-cell">
-                    {player.stats["30d"]}
-                  </td>
-                  <td className="font-medium text-[#ffbf46]">
-                    {player.stats.allTime}
-                  </td>
-                </tr>
-              );
-            })}
+            {data.map((player) => (
+              <LeaderboardRow
+                key={player.id}
+                player={player}
+                isYou={player.id === currentUserId}
+              />
+            ))}
           </tbody>
         </table>
       </div>

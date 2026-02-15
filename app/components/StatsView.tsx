@@ -10,39 +10,38 @@ type Habit = {
 };
 
 type HabitStats = {
-  title: string;
   createdAt: string;
   currentStreak: number;
   longestStreak: number;
   calendar: Record<string, number>;
 };
 
-export default function StatsView() {
-  const [habits, setHabits] = useState<Habit[]>([]);
-  const [selectedHabitId, setSelectedHabitId] = useState<string | null>(null);
-  const [stats, setStats] = useState<HabitStats | null>(null);
+type Props = {
+  habits: Habit[];
+};
 
-  useEffect(() => {
-    fetch(`/api/habit`)
-      .then((res) => res.json())
-      .then((data) => {
-        setHabits(data);
-        if (data.length > 0) setSelectedHabitId(data[0].id);
-      });
-  }, []);
+export default function StatsView({ habits }: Props) {
+  const [selectedHabitId, setSelectedHabitId] = useState(habits[0]?.id ?? null);
+  const [stats, setStats] = useState<HabitStats | null>(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!selectedHabitId) return;
 
+    setLoading(true);
+
     fetch(`/api/habit/${selectedHabitId}/stats`)
       .then((res) => res.json())
-      .then(setStats);
+      .then(setStats)
+      .finally(() => setLoading(false));
   }, [selectedHabitId]);
 
   return (
     <div className="space-y-6 text-gray-200">
+      {/* Selector */}
       <div className="bg-neutral rounded-xl p-4 max-w-xl">
         <label className="block text-sm mb-2 opacity-60">Select Habit</label>
+
         <select
           className="select select-bordered w-full"
           value={selectedHabitId ?? ""}
@@ -56,28 +55,33 @@ export default function StatsView() {
         </select>
       </div>
 
-      {stats && (
+      {/* Loading skeleton */}
+      {loading && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="skeleton h-24 rounded-xl" />
+          <div className="skeleton h-24 rounded-xl" />
+          <div className="skeleton h-56 md:col-span-2 rounded-xl" />
+        </div>
+      )}
+
+      {/* Stats */}
+      {stats && !loading && (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Current Streak */}
-            <div className="bg-neutral rounded-xl p-4">
-              <div className="text-sm opacity-60">Current Streak</div>
-              <div className="text-3xl font-bold text-success flex items-center gap-2">
-                <FaFireAlt className="text-orange-500" />
-                {stats.currentStreak}
-              </div>
-              <div className="text-sm opacity-60">Days in a row</div>
-            </div>
+            <StatCard
+              title="Current Streak"
+              value={stats.currentStreak}
+              icon={<FaFireAlt className="text-orange-500" />}
+              subtitle="Days in a row"
+              success
+            />
 
-            {/* Longest Streak */}
-            <div className="bg-neutral rounded-xl p-4">
-              <div className="text-sm opacity-60">Longest Streak</div>
-              <div className="text-3xl font-bold flex items-center gap-2">
-                <FaTrophy className="text-warning" />
-                {stats.longestStreak}
-              </div>
-              <div className="text-sm opacity-60">Best consistency</div>
-            </div>
+            <StatCard
+              title="Longest Streak"
+              value={stats.longestStreak}
+              icon={<FaTrophy className="text-warning" />}
+              subtitle="Best consistency"
+            />
           </div>
 
           <div className="bg-neutral rounded-xl p-4">
@@ -91,6 +95,36 @@ export default function StatsView() {
           </div>
         </>
       )}
+    </div>
+  );
+}
+
+/* --- Small reusable card --- */
+function StatCard({
+  title,
+  value,
+  icon,
+  subtitle,
+  success,
+}: {
+  title: string;
+  value: number;
+  icon: React.ReactNode;
+  subtitle: string;
+  success?: boolean;
+}) {
+  return (
+    <div className="bg-neutral rounded-xl p-4">
+      <div className="text-sm opacity-60">{title}</div>
+      <div
+        className={`text-3xl font-bold flex items-center gap-2 ${
+          success ? "text-success" : ""
+        }`}
+      >
+        {icon}
+        {value}
+      </div>
+      <div className="text-sm opacity-60">{subtitle}</div>
     </div>
   );
 }
