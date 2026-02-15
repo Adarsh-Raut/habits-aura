@@ -14,7 +14,7 @@ type LeaderboardApiUser = {
 export default async function Page() {
   const session = await getServerSession(authOptions);
 
-  const res = await fetch("/api/leaderboard", {
+  const res = await fetch(`${process.env.NEXTAUTH_URL}/api/leaderboard`, {
     cache: "no-store",
   });
 
@@ -23,7 +23,9 @@ export default async function Page() {
   }
 
   const users: LeaderboardApiUser[] = await res.json();
-  const currentUser = users.find((u) => u.id === session?.user?.id);
+  const currentUser = session
+    ? users.find((u) => u.id === session.user.id)
+    : null;
 
   const leaderboardData = users.map((user) => ({
     id: user.id,

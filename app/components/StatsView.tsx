@@ -23,7 +23,7 @@ export default function StatsView() {
   const [stats, setStats] = useState<HabitStats | null>(null);
 
   useEffect(() => {
-    fetch("/api/habit")
+    fetch(`${process.env.NEXTAUTH_URL}/api/habit`)
       .then((res) => res.json())
       .then((data) => {
         setHabits(data);
@@ -34,7 +34,7 @@ export default function StatsView() {
   useEffect(() => {
     if (!selectedHabitId) return;
 
-    fetch(`/api/habit/${selectedHabitId}/stats`)
+    fetch(`${process.env.NEXTAUTH_URL}/api/habit/${selectedHabitId}/stats`)
       .then((res) => res.json())
       .then(setStats);
   }, [selectedHabitId]);

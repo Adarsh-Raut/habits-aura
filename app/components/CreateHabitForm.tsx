@@ -79,7 +79,7 @@ export default function CreateHabitForm() {
     try {
       setLoading(true);
 
-      const response = await fetch("/api/habit", {
+      const response = await fetch(`${process.env.NEXTAUTH_URL}/api/habit`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
