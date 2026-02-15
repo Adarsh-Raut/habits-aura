@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getTodayDate, getTodayDateKey } from "@/lib/date";
 import { AURA_DELTA } from "@/lib/aura";
 import { getServerSession } from "next-auth";
-import { authOptions } from "../../auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 
 export async function PATCH(
