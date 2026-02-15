@@ -14,7 +14,7 @@ type LeaderboardApiUser = {
 export default async function Page() {
   const session = await getServerSession(authOptions);
 
-  const res = await fetch("http://localhost:3000/api/leaderboard", {
+  const res = await fetch("/api/leaderboard", {
     cache: "no-store",
   });
 
