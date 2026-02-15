@@ -3,8 +3,10 @@
 import { signIn } from "next-auth/react";
 import { FaGoogle } from "react-icons/fa";
 import { motion } from "framer-motion";
+import { useState } from "react";
 
 export default function SignIn() {
+  const [loading, setLoading] = useState(false);
   return (
     <motion.div
       initial={{ opacity: 0, y: 20, scale: 0.98 }}
@@ -34,13 +36,24 @@ export default function SignIn() {
           </ul>
 
           <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => signIn("google", { callbackUrl: "/" })}
-            className="btn btn-primary btn-block gap-2 text-base"
+            disabled={loading}
+            onClick={() => {
+              setLoading(true);
+              signIn("google", {
+                callbackUrl: "/",
+                prompt: "select_account",
+              });
+            }}
+            className="btn btn-primary btn-block gap-2 text-base disabled:opacity-60"
           >
-            <FaGoogle size={18} />
-            Continue with Google
+            {loading ? (
+              "Redirecting..."
+            ) : (
+              <>
+                <FaGoogle size={18} />
+                Continue with Google
+              </>
+            )}
           </motion.button>
 
           <p className="text-xs text-center text-base-content/50">
