@@ -1,6 +1,25 @@
 import Avatar from "./Avatar";
 
-const Leaderboard = ({ data, currentUserId }) => {
+type LeaderboardStats = {
+  "24h": number;
+  "7d": number;
+  "30d": number;
+  allTime: number;
+};
+
+type LeaderboardPlayer = {
+  id: string;
+  name: string;
+  avatar: string;
+  stats: LeaderboardStats;
+};
+
+type LeaderboardProps = {
+  data: LeaderboardPlayer[];
+  currentUserId?: string;
+};
+
+const Leaderboard = ({ data, currentUserId }: LeaderboardProps) => {
   return (
     <div className="bg-neutral rounded-xl shadow p-4 sm:p-6">
       <h2 className="text-lg sm:text-2xl font-semibold mb-4">Leaderboard</h2>
