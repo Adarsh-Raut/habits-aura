@@ -62,7 +62,7 @@ export default function Habit() {
   }, []);
 
   useEffect(() => {
-    fetch(`${process.env.NEXTAUTH_URL}/api/habit`)
+    fetch(`/api/habit`)
       .then((r) => r.json())
       .then(setHabits);
   }, []);
@@ -91,7 +91,7 @@ export default function Habit() {
   const deleteHabit = async (id: string) => {
     closeMenu();
     setHabits((prev) => prev.filter((h) => h.id !== id));
-    await fetch(`${process.env.NEXTAUTH_URL}/api/habit/${id}`, {
+    await fetch(`/api/habit/${id}`, {
       method: "DELETE",
     });
   };
@@ -103,7 +103,7 @@ export default function Habit() {
         h.id === id ? { ...h, status: nextStatusMap[h.status] } : h,
       ),
     );
-    await fetch(`${process.env.NEXTAUTH_URL}/api/habit/${id}`, {
+    await fetch(`/api/habit/${id}`, {
       method: "PATCH",
     });
     setLoadingHabitId(null);

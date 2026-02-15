@@ -12,7 +12,7 @@ export default function StatsPanel() {
   const [stats, setStats] = useState<Stats | null>(null);
 
   useEffect(() => {
-    fetch(`${process.env.NEXTAUTH_URL}/api/stats`)
+    fetch(`/api/stats`)
       .then((res) => res.json())
       .then(setStats);
   }, []);
