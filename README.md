@@ -47,7 +47,7 @@ Users can:
 ## 1️⃣ Clone Repository
 
 ```bash
-git clone https://github.com/your-username/habits-aura.git
+git clone https://github.com/Adarsh-Raut/habits-aura.git
 cd habits-aura
 ```
 
