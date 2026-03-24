@@ -42,7 +42,7 @@ function HabitPreview({
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay, duration: 0.4 }}
-      className="bg-[#101512] border border-[#232b26] rounded-xl p-4 flex items-center justify-between"
+      className="bg-[#161c18] border border-[#3f4758] rounded-xl p-4 flex items-center justify-between"
     >
       <div className="flex items-center gap-3">
         <div
@@ -51,16 +51,16 @@ function HabitPreview({
               ? "border-[#22c55e] text-[#22c55e]"
               : status === "skipped"
                 ? "border-red-500 text-red-500"
-                : "border-[#232b26]"
+                : "border-[#4b5563] text-[#6b7280]"
           }`}
         >
           {status === "completed" && "✓"}
           {status === "skipped" && "✕"}
         </div>
-        <span className="text-[#ecfdf5] font-medium">{title}</span>
+        <span className="text-[#e5e7eb] font-medium">{title}</span>
       </div>
       {streak > 0 ? (
-        <span className="flex items-center gap-1 text-sm text-[#facc15] bg-[#facc15]/10 px-2 py-1 rounded-full">
+        <span className="flex items-center gap-1 text-sm text-[#fb923c] bg-[#fb923c]/15 px-2 py-1 rounded-full">
           <FaFireAlt className="w-3 h-3" />
           {streak}
         </span>
@@ -84,10 +84,19 @@ export default function SignIn() {
         className="flex items-center justify-between w-full max-w-6xl mx-auto px-6 py-6"
       >
         <div className="flex items-center gap-2">
-          <DiAtom className="w-8 h-8 text-[#22c55e]" />
-          <span className="text-xl font-bold text-[#ecfdf5]">Habits Aura</span>
+          <DiAtom className="w-8 h-8 text-[#d1d5db]" />
+          <span className="text-xl font-bold text-[#f3f4f6]">Habits Aura</span>
         </div>
-        <button className="px-5 py-2.5 text-[#ecfdf5] font-medium rounded-lg border border-[#232b26] hover:border-[#22c55e]/50 hover:bg-[#22c55e]/5 transition-all duration-300">
+        <button
+          onClick={() => {
+            setLoading(true);
+            signIn("google", {
+              callbackUrl: "/",
+              prompt: "select_account",
+            });
+          }}
+          className="px-5 py-2.5 bg-[#22c55e] hover:bg-[#4ade80] text-[#052e16] font-medium rounded-lg shadow-lg shadow-[#22c55e]/20 hover:shadow-[#22c55e]/30 transition-all duration-300"
+        >
           Sign in
         </button>
       </motion.header>
@@ -105,7 +114,7 @@ export default function SignIn() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1, duration: 0.6 }}
-            className="text-4xl md:text-5xl lg:text-6xl font-bold text-[#ecfdf5] leading-tight mb-6"
+            className="text-4xl md:text-5xl lg:text-6xl font-bold text-[#f3f4f6] leading-tight mb-6"
           >
             Build habits. Track consistency.{" "}
             <span className="text-[#22c55e]">Grow your aura.</span>
@@ -115,7 +124,7 @@ export default function SignIn() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2, duration: 0.6 }}
-            className="text-lg md:text-xl text-[#9ca3af] mb-10"
+            className="text-lg md:text-xl text-[#9aa4b2] mb-10"
           >
             Stay consistent, earn aura points, and compete on the leaderboard.
           </motion.p>
@@ -189,7 +198,7 @@ export default function SignIn() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.8 }}
-              className="text-center text-[#6b7280] text-sm mt-4"
+              className="text-center text-[#7c8798] text-sm mt-4"
             >
               Free · No credit card · Takes 10 seconds
             </motion.p>
@@ -207,7 +216,7 @@ export default function SignIn() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 1, duration: 0.5 }}
-            className="text-2xl md:text-3xl font-bold text-[#ecfdf5] text-center mb-10"
+            className="text-2xl md:text-3xl font-bold text-[#f3f4f6] text-center mb-10"
           >
             Everything you need
           </motion.h2>
@@ -220,7 +229,7 @@ export default function SignIn() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 1.1 + index * 0.1, duration: 0.5 }}
                 whileHover={{ y: -4 }}
-                className="bg-[#101512] border border-[#232b26] rounded-2xl p-6 hover:border-[#22c55e]/30 transition-all duration-300"
+                className="bg-[#161c18] border border-[#3f4758] rounded-2xl p-6 hover:border-[#6b7280] transition-all duration-300"
               >
                 <motion.div
                   initial={{ scale: 0 }}
@@ -230,14 +239,14 @@ export default function SignIn() {
                     type: "spring",
                     stiffness: 200,
                   }}
-                  className="w-12 h-12 rounded-xl bg-[#22c55e]/15 flex items-center justify-center mb-4"
+                  className="w-12 h-12 rounded-xl bg-[#fb923c]/15 flex items-center justify-center mb-4"
                 >
-                  <feature.icon className="w-6 h-6 text-[#22c55e]" />
+                  <feature.icon className="w-6 h-6 text-[#fb923c]" />
                 </motion.div>
-                <h3 className="text-lg font-semibold text-[#ecfdf5] mb-2">
+                <h3 className="text-lg font-semibold text-[#f3f4f6] mb-2">
                   {feature.title}
                 </h3>
-                <p className="text-sm text-[#9ca3af]">{feature.description}</p>
+                <p className="text-sm text-[#9aa4b2]">{feature.description}</p>
               </motion.div>
             ))}
           </div>
@@ -250,10 +259,10 @@ export default function SignIn() {
           transition={{ delay: 1.5, duration: 0.5 }}
           className="text-center mb-16"
         >
-          <h3 className="text-2xl font-bold text-[#ecfdf5] mb-3">
+          <h3 className="text-2xl font-bold text-[#f3f4f6] mb-3">
             Ready to start?
           </h3>
-          <p className="text-[#9ca3af] mb-6">Takes 10 seconds to sign in.</p>
+          <p className="text-[#9aa4b2] mb-6">Takes 10 seconds to sign in.</p>
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
@@ -277,7 +286,7 @@ export default function SignIn() {
           transition={{ delay: 1.6, duration: 0.5 }}
           className="text-center pb-8"
         >
-          <p className="text-[#6b7280] text-sm">
+          <p className="text-[#7c8798] text-sm">
             Habits Aura · Build habits. Grow your aura.
           </p>
         </motion.footer>
