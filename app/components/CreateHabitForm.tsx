@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { FaArrowLeft } from "react-icons/fa6";
 import Link from "next/link";
 import confetti from "canvas-confetti";
+import { playCompleteSound } from "@/lib/audio";
 import { useRouter } from "next/navigation";
 
 const DAY_MAP = {
@@ -30,6 +31,7 @@ const HABIT_SUGGESTIONS = [
 
 export default function CreateHabitForm() {
   const router = useRouter();
+  const submitButtonRef = useRef<HTMLButtonElement>(null);
 
   const [title, setTitle] = useState("");
   const [days, setDays] = useState<string[]>(Object.keys(DAY_MAP));
@@ -56,7 +58,18 @@ export default function CreateHabitForm() {
 
       if (!res.ok) throw new Error();
 
-      confetti({ particleCount: 120, spread: 80, origin: { y: 0.7 } });
+      playCompleteSound();
+
+      if (submitButtonRef.current) {
+        const rect = submitButtonRef.current.getBoundingClientRect();
+        const x = (rect.left + rect.width / 2) / window.innerWidth;
+        const y = (rect.top + rect.height / 2) / window.innerHeight;
+        confetti({
+          particleCount: 120,
+          spread: 80,
+          origin: { x, y },
+        });
+      }
 
       router.replace("/");
       router.refresh();
@@ -142,6 +155,7 @@ export default function CreateHabitForm() {
 
           {/* SUBMIT */}
           <button
+            ref={submitButtonRef}
             type="submit"
             disabled={loading}
             className="btn bg-[#05C26A] text-white btn-block"

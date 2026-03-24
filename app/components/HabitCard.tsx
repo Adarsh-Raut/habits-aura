@@ -2,8 +2,9 @@
 
 import { Dispatch, SetStateAction, useRef, useState } from "react";
 import { BsThreeDotsVertical } from "react-icons/bs";
-import { AiOutlineLoading3Quarters } from "react-icons/ai";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
+import { toast } from "sonner";
+import { playCompleteSound } from "@/lib/audio";
 import type { Habit, HabitStatus } from "@/app/types/habit";
 
 type HabitCardProps = {
@@ -31,7 +32,6 @@ const titleVariants: Variants = {
 };
 
 export default function HabitCard({ habit, setHabits }: HabitCardProps) {
-  const [loading, setLoading] = useState<boolean>(false);
   const [menuOpen, setMenuOpen] = useState<boolean>(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
@@ -39,24 +39,44 @@ export default function HabitCard({ habit, setHabits }: HabitCardProps) {
   const isSkipped = habit.status === "SKIPPED";
 
   async function toggleHabit() {
-    setLoading(true);
+    const previousStatus = habit.status;
+    const newStatus = nextStatusMap[habit.status];
+
+    if (previousStatus !== "COMPLETED" && newStatus === "COMPLETED") {
+      playCompleteSound();
+    }
 
     setHabits((prev) =>
       prev.map((h) =>
-        h.id === habit.id ? { ...h, status: nextStatusMap[h.status] } : h,
+        h.id === habit.id ? { ...h, status: newStatus } : h,
       ),
     );
 
     try {
-      await fetch(`/api/habit/${habit.id}`, { method: "PATCH" });
-    } finally {
-      setLoading(false);
+      const res = await fetch(`/api/habit/${habit.id}`, { method: "PATCH" });
+      if (!res.ok) throw new Error("Failed to update");
+    } catch {
+      setHabits((prev) =>
+        prev.map((h) =>
+          h.id === habit.id ? { ...h, status: previousStatus } : h,
+        ),
+      );
+      toast.error("Failed to update habit. Please try again.");
     }
   }
 
   async function deleteHabit() {
     setHabits((prev) => prev.filter((h) => h.id !== habit.id));
-    await fetch(`/api/habit/${habit.id}`, { method: "DELETE" });
+    setMenuOpen(false);
+
+    try {
+      const res = await fetch(`/api/habit/${habit.id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete");
+      toast.error("Habit deleted");
+    } catch {
+      setHabits((prev) => [habit, ...prev]);
+      toast.error("Failed to delete habit. Please try again.");
+    }
   }
 
   return (
@@ -97,8 +117,7 @@ export default function HabitCard({ habit, setHabits }: HabitCardProps) {
       {/* RIGHT */}
       <button
         onClick={toggleHabit}
-        disabled={loading}
-        className={`w-10 h-10 rounded-md border-2 flex items-center justify-center ${
+        className={`w-10 h-10 rounded-md border-2 flex items-center justify-center transition-transform active:scale-95 ${
           isCompleted
             ? "border-success text-success"
             : isSkipped
@@ -106,13 +125,7 @@ export default function HabitCard({ habit, setHabits }: HabitCardProps) {
               : "border-gray-500"
         }`}
       >
-        {loading ? (
-          <AiOutlineLoading3Quarters className="animate-spin" />
-        ) : isCompleted ? (
-          "✓"
-        ) : isSkipped ? (
-          "✕"
-        ) : null}
+        {isCompleted ? "✓" : isSkipped ? "✕" : null}
       </button>
 
       {/* MENU */}

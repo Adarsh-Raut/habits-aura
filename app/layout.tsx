@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
+import { Toaster } from "sonner";
 import "./globals.css";
 import Navbar from "./components/Navbar";
 import Sidebar from "./components/Sidebar";
@@ -33,6 +34,19 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Providers>
+          <Toaster
+            position="bottom-center"
+            richColors
+            closeButton
+            theme="dark"
+            toastOptions={{
+              style: {
+                background: "#262626",
+                border: "1px solid #404040",
+                color: "#e5e5e5",
+              },
+            }}
+          />
           <div className="drawer lg:drawer-open min-h-screen bg-[#1E2330]">
             <input
               id="sidebar-drawer"
