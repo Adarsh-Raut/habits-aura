@@ -4,100 +4,259 @@ import { signIn } from "next-auth/react";
 import { DiAtom } from "react-icons/di";
 import { FaGoogle, FaFireAlt, FaBolt } from "react-icons/fa";
 import { BsGrid3X3Gap } from "react-icons/bs";
+import { IoRocketOutline } from "react-icons/io5";
 import { motion } from "framer-motion";
 import { useState } from "react";
 
 const features = [
   {
     icon: FaFireAlt,
-    title: "Build streaks that actually stick",
+    title: "Build Streaks",
+    description: "Create habits and maintain consistency day after day",
   },
   {
     icon: BsGrid3X3Gap,
-    title: "Visualize your consistency",
+    title: "Visualize Progress",
+    description: "GitHub-style heatmap to track your consistency",
   },
   {
     icon: FaBolt,
-    title: "Earn aura points",
+    title: "Earn Aura Points",
+    description: "Get rewarded for your consistency with aura points",
   },
 ];
+
+function HabitPreview({
+  status,
+  title,
+  streak,
+  delay,
+}: {
+  status: "completed" | "none" | "skipped";
+  title: string;
+  streak: number;
+  delay: number;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ delay, duration: 0.4 }}
+      className="bg-[#101512] border border-[#232b26] rounded-xl p-4 flex items-center justify-between"
+    >
+      <div className="flex items-center gap-3">
+        <div
+          className={`w-10 h-10 rounded-lg border-2 flex items-center justify-center text-lg font-bold ${
+            status === "completed"
+              ? "border-[#22c55e] text-[#22c55e]"
+              : status === "skipped"
+                ? "border-red-500 text-red-500"
+                : "border-[#232b26]"
+          }`}
+        >
+          {status === "completed" && "✓"}
+          {status === "skipped" && "✕"}
+        </div>
+        <span className="text-[#ecfdf5] font-medium">{title}</span>
+      </div>
+      {streak > 0 ? (
+        <span className="flex items-center gap-1 text-sm text-[#facc15] bg-[#facc15]/10 px-2 py-1 rounded-full">
+          <FaFireAlt className="w-3 h-3" />
+          {streak}
+        </span>
+      ) : (
+        <IoRocketOutline className="w-5 h-5 text-[#6b7280]" />
+      )}
+    </motion.div>
+  );
+}
 
 export default function SignIn() {
   const [loading, setLoading] = useState(false);
 
   return (
-    <div className="relative z-10 w-full max-w-md px-4">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
+    <div className="flex-1 flex flex-col relative z-10">
+      {/* Header */}
+      <motion.header
+        initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: "easeOut" }}
+        transition={{ duration: 0.5 }}
+        className="flex items-center justify-between w-full max-w-6xl mx-auto px-6 py-6"
       >
-        <div className="bg-[#1a1d26] border border-white/[0.08] rounded-2xl p-10 shadow-2xl shadow-black/20">
-          <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.1, duration: 0.5, type: "spring" }}
-            className="flex flex-col items-center mb-8"
+        <div className="flex items-center gap-2">
+          <DiAtom className="w-8 h-8 text-[#22c55e]" />
+          <span className="text-xl font-bold text-[#ecfdf5]">Habits Aura</span>
+        </div>
+        <button className="px-5 py-2.5 text-[#ecfdf5] font-medium rounded-lg border border-[#232b26] hover:border-[#22c55e]/50 hover:bg-[#22c55e]/5 transition-all duration-300">
+          Sign in
+        </button>
+      </motion.header>
+
+      {/* Main Content */}
+      <main className="flex-1 flex flex-col items-center justify-center px-6 py-12">
+        {/* Hero Section */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5 }}
+          className="w-full max-w-2xl text-center mb-12"
+        >
+          <motion.h1
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1, duration: 0.6 }}
+            className="text-4xl md:text-5xl lg:text-6xl font-bold text-[#ecfdf5] leading-tight mb-6"
           >
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.15 }}
-              className="relative mb-6"
-            >
-              <div className="absolute inset-0 bg-[#05C26A]/20 blur-2xl rounded-full" />
-              <DiAtom className="w-14 h-14 text-[#05C26A] relative z-10" />
-            </motion.div>
+            Build habits. Track consistency.{" "}
+            <span className="text-[#22c55e]">Grow your aura.</span>
+          </motion.h1>
 
-            <motion.h1
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="text-2xl font-bold text-white tracking-tight mb-2"
-            >
-              Habits Aura
-            </motion.h1>
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.6 }}
+            className="text-lg md:text-xl text-[#9ca3af] mb-10"
+          >
+            Stay consistent, earn aura points, and compete on the leaderboard.
+          </motion.p>
 
-            <motion.p
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.25 }}
-              className="text-base text-gray-400 text-center"
-            >
-              Build habits. Track consistency.{" "}
-              <span className="text-[#05C26A]">Grow your aura.</span>
-            </motion.p>
+          {/* Habit Cards Preview */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.3, duration: 0.5 }}
+            className="w-full max-w-md mx-auto mb-10"
+          >
+            <div className="space-y-3">
+              <HabitPreview
+                status="completed"
+                title="Exercise"
+                streak={7}
+                delay={0.4}
+              />
+              <HabitPreview
+                status="completed"
+                title="Read"
+                streak={12}
+                delay={0.5}
+              />
+              <HabitPreview
+                status="none"
+                title="Meditate"
+                streak={0}
+                delay={0.6}
+              />
+            </div>
           </motion.div>
 
+          {/* CTA Button */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="space-y-3 mb-8"
+            transition={{ delay: 0.7, duration: 0.5 }}
           >
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              disabled={loading}
+              onClick={() => {
+                setLoading(true);
+                signIn("google", {
+                  callbackUrl: "/",
+                  prompt: "select_account",
+                });
+              }}
+              className="w-full max-w-md mx-auto py-4 px-6 bg-[#22c55e] hover:bg-[#4ade80] text-[#052e16] font-semibold rounded-xl shadow-lg shadow-[#22c55e]/20 hover:shadow-[#22c55e]/30 transition-all duration-300 flex items-center justify-center gap-3 disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {loading ? (
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{
+                    duration: 1,
+                    repeat: Infinity,
+                    ease: "linear",
+                  }}
+                  className="w-5 h-5 border-2 border-[#052e16]/30 border-t-[#052e16] rounded-full"
+                />
+              ) : (
+                <>
+                  <FaGoogle className="w-5 h-5" />
+                  <span>Continue with Google</span>
+                </>
+              )}
+            </motion.button>
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.8 }}
+              className="text-center text-[#6b7280] text-sm mt-4"
+            >
+              Free · No credit card · Takes 10 seconds
+            </motion.p>
+          </motion.div>
+        </motion.div>
+
+        {/* Features Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.9, duration: 0.6 }}
+          className="w-full max-w-4xl mx-auto mt-8 mb-16"
+        >
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1, duration: 0.5 }}
+            className="text-2xl md:text-3xl font-bold text-[#ecfdf5] text-center mb-10"
+          >
+            Everything you need
+          </motion.h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {features.map((feature, index) => (
               <motion.div
                 key={index}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.35 + index * 0.1 }}
-                className="flex items-center gap-4 p-4 rounded-xl bg-white/[0.03] hover:bg-white/[0.05] transition-colors cursor-default"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 1.1 + index * 0.1, duration: 0.5 }}
+                whileHover={{ y: -4 }}
+                className="bg-[#101512] border border-[#232b26] rounded-2xl p-6 hover:border-[#22c55e]/30 transition-all duration-300"
               >
-                <div className="w-10 h-10 rounded-lg bg-[#05C26A]/15 flex items-center justify-center shrink-0">
-                  <feature.icon className="w-5 h-5 text-[#05C26A]" />
-                </div>
-                <span className="text-sm text-gray-300">{feature.title}</span>
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{
+                    delay: 1.3 + index * 0.1,
+                    type: "spring",
+                    stiffness: 200,
+                  }}
+                  className="w-12 h-12 rounded-xl bg-[#22c55e]/15 flex items-center justify-center mb-4"
+                >
+                  <feature.icon className="w-6 h-6 text-[#22c55e]" />
+                </motion.div>
+                <h3 className="text-lg font-semibold text-[#ecfdf5] mb-2">
+                  {feature.title}
+                </h3>
+                <p className="text-sm text-[#9ca3af]">{feature.description}</p>
               </motion.div>
             ))}
-          </motion.div>
+          </div>
+        </motion.div>
 
+        {/* Final CTA */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.5, duration: 0.5 }}
+          className="text-center mb-16"
+        >
+          <h3 className="text-2xl font-bold text-[#ecfdf5] mb-3">
+            Ready to start?
+          </h3>
+          <p className="text-[#9ca3af] mb-6">Takes 10 seconds to sign in.</p>
           <motion.button
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.65 }}
-            whileHover={{ scale: 1.01 }}
-            whileTap={{ scale: 0.99 }}
-            disabled={loading}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             onClick={() => {
               setLoading(true);
               signIn("google", {
@@ -105,32 +264,24 @@ export default function SignIn() {
                 prompt: "select_account",
               });
             }}
-            className="w-full py-4 bg-[#05C26A] hover:bg-[#04a85a] text-white font-semibold rounded-xl shadow-lg shadow-[#05C26A]/20 hover:shadow-[#05C26A]/30 transition-all duration-300 flex items-center justify-center gap-3 disabled:opacity-60 disabled:cursor-not-allowed"
+            className="py-4 px-8 bg-[#22c55e] hover:bg-[#4ade80] text-[#052e16] font-semibold rounded-xl shadow-lg shadow-[#22c55e]/20 hover:shadow-[#22c55e]/30 transition-all duration-300"
           >
-            {loading ? (
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full"
-              />
-            ) : (
-              <>
-                <FaGoogle className="w-5 h-5" />
-                <span>Continue with Google</span>
-              </>
-            )}
+            Get Started Free
           </motion.button>
+        </motion.div>
 
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.75 }}
-            className="text-xs text-center text-gray-500 mt-6"
-          >
-            No spam. No fuss. Just habits.
-          </motion.p>
-        </div>
-      </motion.div>
+        {/* Footer */}
+        <motion.footer
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.6, duration: 0.5 }}
+          className="text-center pb-8"
+        >
+          <p className="text-[#6b7280] text-sm">
+            Habits Aura · Build habits. Grow your aura.
+          </p>
+        </motion.footer>
+      </main>
     </div>
   );
 }

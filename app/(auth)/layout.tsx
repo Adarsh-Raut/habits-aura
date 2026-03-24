@@ -8,12 +8,14 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-[#1E2330] flex items-center justify-center overflow-hidden relative">
+    <div className="min-h-screen bg-[#0b0f0c] flex flex-col overflow-hidden relative">
       <motion.div
         className="absolute inset-0"
         style={{
-          background:
-            "radial-gradient(ellipse at top, rgba(5, 194, 106, 0.08) 0%, transparent 60%)",
+          background: `
+            radial-gradient(ellipse at 30% 0%, rgba(34, 197, 94, 0.1) 0%, transparent 50%),
+            radial-gradient(ellipse at 70% 100%, rgba(74, 222, 128, 0.05) 0%, transparent 50%)
+          `,
         }}
         animate={{
           opacity: [0.8, 1, 0.8],
