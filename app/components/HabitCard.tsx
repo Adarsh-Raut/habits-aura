@@ -2,6 +2,8 @@
 
 import { Dispatch, SetStateAction, useRef, useState } from "react";
 import { BsThreeDotsVertical } from "react-icons/bs";
+import { FaFireAlt } from "react-icons/fa";
+import { IoRocketOutline } from "react-icons/io5";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import { toast } from "sonner";
 import { playCompleteSound } from "@/lib/audio";
@@ -40,6 +42,7 @@ export default function HabitCard({ habit, setHabits }: HabitCardProps) {
 
   async function toggleHabit() {
     const previousStatus = habit.status;
+    const previousStreak = habit.streak;
     const newStatus = nextStatusMap[habit.status];
 
     if (previousStatus !== "COMPLETED" && newStatus === "COMPLETED") {
@@ -47,9 +50,18 @@ export default function HabitCard({ habit, setHabits }: HabitCardProps) {
     }
 
     setHabits((prev) =>
-      prev.map((h) =>
-        h.id === habit.id ? { ...h, status: newStatus } : h,
-      ),
+      prev.map((h) => {
+        if (h.id !== habit.id) return h;
+
+        const newStreak =
+          previousStatus === "COMPLETED" && newStatus !== "COMPLETED"
+            ? h.streak - 1
+            : newStatus === "COMPLETED"
+              ? h.streak + 1
+              : h.streak;
+
+        return { ...h, status: newStatus, streak: newStreak };
+      }),
     );
 
     try {
@@ -57,9 +69,10 @@ export default function HabitCard({ habit, setHabits }: HabitCardProps) {
       if (!res.ok) throw new Error("Failed to update");
     } catch {
       setHabits((prev) =>
-        prev.map((h) =>
-          h.id === habit.id ? { ...h, status: previousStatus } : h,
-        ),
+        prev.map((h) => {
+          if (h.id !== habit.id) return h;
+          return { ...h, status: previousStatus, streak: previousStreak };
+        }),
       );
       toast.error("Failed to update habit. Please try again.");
     }
@@ -90,28 +103,41 @@ export default function HabitCard({ habit, setHabits }: HabitCardProps) {
           <BsThreeDotsVertical className="w-5 h-5 text-gray-400" />
         </button>
 
-        <motion.span
-          layout
-          variants={titleVariants}
-          animate={isCompleted ? "completed" : "active"}
-          className={`relative truncate font-semibold text-base sm:text-lg ${
-            isSkipped ? "text-error" : "text-gray-200"
-          }`}
-        >
-          {habit.title}
+        <div className="flex items-center gap-2">
+          <motion.span
+            layout
+            variants={titleVariants}
+            animate={isCompleted ? "completed" : "active"}
+            className={`relative truncate font-semibold text-base sm:text-lg ${
+              isSkipped ? "text-error" : "text-gray-200"
+            }`}
+          >
+            {habit.title}
 
-          <AnimatePresence>
-            {isCompleted && (
-              <motion.span
-                initial={{ scaleX: 0 }}
-                animate={{ scaleX: 1 }}
-                exit={{ scaleX: 0 }}
-                transition={{ type: "spring", stiffness: 260, damping: 24 }}
-                className="absolute left-0 top-1/2 h-[2px] w-full bg-current origin-left"
-              />
-            )}
-          </AnimatePresence>
-        </motion.span>
+            <AnimatePresence>
+              {isCompleted && (
+                <motion.span
+                  initial={{ scaleX: 0 }}
+                  animate={{ scaleX: 1 }}
+                  exit={{ scaleX: 0 }}
+                  transition={{ type: "spring", stiffness: 260, damping: 24 }}
+                  className="absolute left-0 top-1/2 h-[2px] w-full bg-current origin-left"
+                />
+              )}
+            </AnimatePresence>
+          </motion.span>
+
+          {habit.streak > 0 ? (
+            <span className="flex items-center gap-1 text-xs bg-orange-500/20 text-orange-400 px-2 py-0.5 rounded-full shrink-0">
+              <FaFireAlt className="w-3 h-3" />
+              {habit.streak}
+            </span>
+          ) : (
+            <span className="text-xs text-gray-600 flex items-center gap-1 shrink-0">
+              <IoRocketOutline className="w-3 h-3" />
+            </span>
+          )}
+        </div>
       </div>
 
       {/* RIGHT */}

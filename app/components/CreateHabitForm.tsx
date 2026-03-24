@@ -6,6 +6,7 @@ import Link from "next/link";
 import confetti from "canvas-confetti";
 import { playCompleteSound } from "@/lib/audio";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 const DAY_MAP = {
   SUN: "S",
@@ -71,6 +72,7 @@ export default function CreateHabitForm() {
         });
       }
 
+      toast.success("Habit created!");
       router.replace("/");
       router.refresh();
     } catch {

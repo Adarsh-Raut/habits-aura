@@ -64,11 +64,7 @@ const Navbar = () => {
 
             <ul
               tabIndex={0}
-              className="
-    dropdown-content menu
-    bg-base-200 border border-base-300
-    rounded-xl w-56 p-2 shadow-xl z-50
-  "
+              className="dropdown-content menu bg-base-200 border border-base-300 rounded-xl w-52 sm:w-56 p-2 shadow-xl z-50 max-w-[90vw] overflow-hidden"
             >
               {/* USER INFO */}
               <li className="pointer-events-none">

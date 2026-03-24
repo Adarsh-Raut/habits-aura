@@ -13,4 +13,5 @@ export type Habit = {
   title: string;
   status: HabitStatus;
   createdAt: Date;
+  streak: number;
 };
