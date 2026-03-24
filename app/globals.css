@@ -6,3 +6,20 @@
 :root {
   color-scheme: dark;
 }
+
+/* Custom spacious dark tooltip */
+.tooltip.custom-tooltip::before {
+  padding: 8px 12px;
+  font-size: 12px;
+  border-radius: 8px;
+  background-color: #1f2937;
+  color: #f3f4f6;
+  white-space: nowrap;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+  border-radius: 8px !important;
+}
+
+/* Hide default arrow for clean rounded look */
+.tooltip.custom-tooltip::after {
+  display: none !important;
+}

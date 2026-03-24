@@ -62,15 +62,24 @@ export default function HabitHeatmap({ calendar, createdAt }: Props) {
             {week.map((date, di) => {
               const key = getDateKey(date);
               const isCompleted = completedDays.has(key);
+              const formattedDate = date.toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+              });
 
               return (
                 <div
                   key={di}
-                  title={key}
-                  className={`w-4 h-4 rounded-sm ${
-                    isCompleted ? "bg-green-500" : "bg-gray-700"
-                  }`}
-                />
+                  className="tooltip tooltip-top custom-tooltip"
+                  data-tip={formattedDate}
+                >
+                  <div
+                    className={`w-4 h-4 rounded-sm ${
+                      isCompleted ? "bg-green-500" : "bg-gray-700"
+                    }`}
+                  />
+                </div>
               );
             })}
           </div>
