@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import { getTodayDate, getTodayWeekdayKey } from "@/lib/date";
+import { getTodayDateKey, getTodayWeekdayKey } from "@/lib/date";
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -19,7 +19,7 @@ export async function GET() {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
-  const today = getTodayDate();
+  const todayKey = getTodayDateKey();
   const todayWeekday = getTodayWeekdayKey();
 
   const habits = await prisma.habit.findMany({
@@ -29,14 +29,14 @@ export async function GET() {
     },
     include: {
       completions: {
-        where: { date: today },
+        select: { action: true, dateKey: true },
       },
     },
     orderBy: { createdAt: "asc" },
   });
 
   const result = habits.map((habit) => {
-    const completion = habit.completions[0];
+    const completion = habit.completions.find((c) => c.dateKey === todayKey);
 
     return {
       id: habit.id,

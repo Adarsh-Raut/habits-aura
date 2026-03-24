@@ -21,7 +21,7 @@ export async function middleware(request: NextRequest) {
   // If token exists, allow the user to access any route
   if (token && pathname === "/signin") {
     console.log(
-      "Middleware: Redirecting authenticated user away from /api/auth/signin"
+      "Middleware: Redirecting authenticated user away from /api/auth/signin",
     );
     return NextResponse.redirect(new URL("/", request.url));
   }
@@ -29,9 +29,9 @@ export async function middleware(request: NextRequest) {
   // If no token, redirect unauthenticated users to the sign-in page
   if (!token && pathname !== "/signin") {
     console.log(
-      "Middleware: Redirecting unauthenticated user to /api/auth/signin"
+      "Middleware: Redirecting unauthenticated user to /api/auth/signin",
     );
-    return NextResponse.redirect(new URL("/api/auth/signin", request.url));
+      return NextResponse.redirect(new URL("/signin", request.url));
   }
 
   return NextResponse.next();
