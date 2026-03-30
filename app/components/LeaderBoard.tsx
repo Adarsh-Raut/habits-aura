@@ -3,19 +3,12 @@
 import Avatar from "./Avatar";
 import { memo } from "react";
 
-type LeaderboardStats = {
-  "24h": number;
-  "7d": number;
-  "30d": number;
-  allTime: number;
-};
-
 type LeaderboardPlayer = {
   id: string;
   name: string;
   avatar: string;
   rank: number;
-  stats: LeaderboardStats;
+  auraPoints: number;
 };
 
 type LeaderboardProps = {
@@ -40,10 +33,7 @@ const LeaderboardRow = memo(
           </div>
         </td>
 
-        <td className="hidden sm:table-cell">{player.stats["24h"]}</td>
-        <td className="hidden sm:table-cell">{player.stats["7d"]}</td>
-        <td className="hidden sm:table-cell">{player.stats["30d"]}</td>
-        <td className="font-medium text-[#ffbf46]">{player.stats.allTime}</td>
+        <td className="font-medium text-[#ffbf46]">{player.auraPoints}</td>
       </tr>
     );
   },
@@ -62,10 +52,7 @@ const Leaderboard = ({ data, currentUserId }: LeaderboardProps) => {
             <tr>
               <th>#</th>
               <th>Player</th>
-              <th className="hidden sm:table-cell">24h</th>
-              <th className="hidden sm:table-cell">7d</th>
-              <th className="hidden sm:table-cell">30d</th>
-              <th>All Time</th>
+              <th>Aura Points</th>
             </tr>
           </thead>
 

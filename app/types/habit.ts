@@ -6,6 +6,8 @@ export type DbHabit = {
   days: string[];
   userId: string;
   createdAt: Date;
+  currentStreak: number;
+  longestStreak: number;
 };
 
 export type Habit = {

@@ -3,7 +3,6 @@
 import { useState, useRef } from "react";
 import { FaArrowLeft } from "react-icons/fa6";
 import Link from "next/link";
-import confetti from "canvas-confetti";
 import { playCompleteSound } from "@/lib/audio";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -65,6 +64,7 @@ export default function CreateHabitForm() {
         const rect = submitButtonRef.current.getBoundingClientRect();
         const x = (rect.left + rect.width / 2) / window.innerWidth;
         const y = (rect.top + rect.height / 2) / window.innerHeight;
+        const confetti = (await import("canvas-confetti")).default;
         confetti({
           particleCount: 120,
           spread: 80,

@@ -1,7 +1,6 @@
 import Leaderboard from "../components/LeaderBoard";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import ClientRefresh from "./ClientRefresh";
 import { headers } from "next/headers";
 
 type LeaderboardApiUser = {
@@ -19,9 +18,7 @@ export default async function Page() {
   const host = headersList.get("host");
   const protocol = process.env.NODE_ENV === "development" ? "http" : "https";
 
-  const res = await fetch(`${protocol}://${host}/api/leaderboard`, {
-    cache: "no-store",
-  });
+  const res = await fetch(`${protocol}://${host}/api/leaderboard`);
 
   if (!res.ok) {
     throw new Error("Failed to load leaderboard");
@@ -38,18 +35,11 @@ export default async function Page() {
     name: u.name,
     avatar: u.avatar,
     rank: u.rank,
-    stats: {
-      "24h": u.auraPoints,
-      "7d": u.auraPoints,
-      "30d": u.auraPoints,
-      allTime: u.auraPoints,
-    },
+    auraPoints: u.auraPoints,
   }));
 
   return (
     <>
-      <ClientRefresh />
-
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {currentUser && (
           <div className="bg-neutral rounded-xl p-4">

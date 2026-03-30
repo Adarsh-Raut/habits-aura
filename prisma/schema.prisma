@@ -17,6 +17,8 @@ model User {
   accounts      Account[]
   sessions      Session[]
   habits        Habit[]
+
+  @@index([auraPoints])
 }
 
 model Account {
@@ -58,15 +60,18 @@ model VerificationToken {
 }
 
 model Habit {
-  id          String            @id @default(cuid())
-  title       String
-  days        String[]
-  userId      String
-  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt   DateTime          @default(now())
-  completions HabitCompletion[]
+  id            String            @id @default(cuid())
+  title         String
+  days          String[]
+  userId        String
+  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt     DateTime          @default(now())
+  currentStreak Int               @default(0)
+  longestStreak Int               @default(0)
+  completions   HabitCompletion[]
 
   @@map("habits")
+  @@index([userId])
 }
 
 enum HabitAction {
@@ -83,4 +88,5 @@ model HabitCompletion {
   habit   Habit       @relation(fields: [habitId], references: [id], onDelete: Cascade)
 
   @@unique([habitId, dateKey])
+  @@index([habitId, action, dateKey])
 }
