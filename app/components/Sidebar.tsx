@@ -44,8 +44,9 @@ export default function Sidebar() {
               }
               transition-colors
             `}
+            aria-current={pathname === item.path ? "page" : undefined}
           >
-            <item.icon className="w-5 h-5" />
+            <item.icon className="w-5 h-5" aria-hidden="true" />
             <span className="font-medium tracking-wide">{item.name}</span>
           </Link>
         ))}
