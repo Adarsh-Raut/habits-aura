@@ -99,6 +99,7 @@ export default function HabitCard({ habit, setHabits }: HabitCardProps) {
         <button
           onClick={() => setMenuOpen((v) => !v)}
           className="btn btn-ghost btn-sm btn-circle"
+          aria-label="More Options"
         >
           <BsThreeDotsVertical className="w-5 h-5 text-gray-400" />
         </button>
@@ -150,6 +151,7 @@ export default function HabitCard({ habit, setHabits }: HabitCardProps) {
               ? "border-error text-error"
               : "border-gray-500"
         }`}
+        aria-label="Toggle Habit"
       >
         {isCompleted ? "✓" : isSkipped ? "✕" : null}
       </button>
@@ -163,6 +165,7 @@ export default function HabitCard({ habit, setHabits }: HabitCardProps) {
           <button
             onClick={deleteHabit}
             className="px-4 py-2 text-error hover:bg-base-300 w-full text-left"
+            aria-label="Delete Habit"
           >
             Delete
           </button>

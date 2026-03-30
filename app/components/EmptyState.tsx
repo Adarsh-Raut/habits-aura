@@ -19,6 +19,7 @@ export default function EmptyState() {
       <button
         onClick={() => router.push("/create")}
         className="btn bg-[#05C26A] text-white gap-2"
+        aria-label="Create First Habit"
       >
         <FaPlus />
         Create First Habit

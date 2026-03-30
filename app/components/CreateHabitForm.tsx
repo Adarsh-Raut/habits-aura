@@ -124,6 +124,7 @@ export default function CreateHabitForm() {
                   disabled={loading}
                   onClick={() => setTitle(h)}
                   className="badge badge-base-200 badge-lg cursor-pointer"
+                  aria-label="Suggestion"
                 >
                   {h}
                 </button>
@@ -161,6 +162,7 @@ export default function CreateHabitForm() {
             type="submit"
             disabled={loading}
             className="btn bg-[#05C26A] text-white btn-block"
+            aria-label="Create Habit"
           >
             {loading ? "Creating..." : "Create Habit"}
           </button>

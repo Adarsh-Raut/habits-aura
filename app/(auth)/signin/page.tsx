@@ -96,6 +96,7 @@ export default function SignIn() {
             });
           }}
           className="px-5 py-2.5 bg-[#22c55e] hover:bg-[#4ade80] text-[#052e16] font-medium rounded-lg shadow-lg shadow-[#22c55e]/20 hover:shadow-[#22c55e]/30 transition-all duration-300"
+          aria-label="Sign in with Google"
         >
           Sign in
         </button>

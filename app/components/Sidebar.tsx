@@ -39,8 +39,8 @@ export default function Sidebar() {
               flex items-center gap-3 px-4 py-3 rounded-lg
               ${
                 pathname === item.path
-                  ? "text-gray-200 bg-gray-700/50"
-                  : "text-gray-500 hover:bg-gray-700/30"
+                  ? "text-gray-100 bg-gray-700/50"
+                  : "text-gray-300 hover:bg-gray-700/30"
               }
               transition-colors
             `}

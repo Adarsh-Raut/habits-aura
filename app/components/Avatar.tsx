@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 
 type AvatarProps = {
@@ -17,15 +18,16 @@ export default function Avatar({ src, name, size = 32 }: AvatarProps) {
 
   return (
     <div
-      className="rounded-full overflow-hidden bg-base-300 flex items-center justify-center"
+      className="rounded-full overflow-hidden bg-base-300 flex items-center justify-center relative"
       style={{ width: size, height: size }}
     >
-      <img
+      <Image
         src={!src || error ? fallback : src}
         alt={name}
         referrerPolicy="no-referrer"
         onError={() => setError(true)}
-        className="w-full h-full object-cover"
+        className="object-cover"
+        fill
       />
     </div>
   );

@@ -7,6 +7,7 @@ import { MdLogout } from "react-icons/md";
 import Link from "next/link";
 import { signOut, useSession } from "next-auth/react";
 import { usePathname } from "next/navigation";
+import Image from "next/image";
 
 const Navbar = () => {
   const pathname = usePathname();
@@ -46,11 +47,13 @@ const Navbar = () => {
               className="btn btn-ghost gap-2 px-2 sm:px-3 normal-case"
             >
               <div className="avatar">
-                <div className="w-8 rounded-full">
-                  <img
+                <div className="w-8 rounded-full relative overflow-hidden">
+                  <Image
                     src={session.user.image ?? ""}
                     alt={session.user.name ?? "User avatar"}
                     referrerPolicy="no-referrer"
+                    fill
+                    className="object-cover"
                   />
                 </div>
               </div>
@@ -89,6 +92,7 @@ const Navbar = () => {
                     })
                   }
                   className="text-error flex items-center gap-2 w-full"
+                  aria-label="Logout"
                 >
                   <MdLogout className="h-4 w-4 shrink-0" />
                   <span className="truncate">Logout</span>

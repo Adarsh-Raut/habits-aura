@@ -5,7 +5,7 @@ import { IoIosAdd } from "react-icons/io";
 const PlusIconInput = () => {
   return (
     <Link href="/create">
-      <button className="btn btn-ghost">
+      <button className="btn btn-ghost" aria-label="Create New Habit">
         <IoIosAdd size={50} />
       </button>
     </Link>
