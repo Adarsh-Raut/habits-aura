@@ -19,8 +19,40 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Habits Aura",
-  description: "Habits dictate your aura",
+  title: {
+    default: "Habits Aura - Build Habits, Track Consistency",
+    template: "%s | Habits Aura",
+  },
+  description:
+    "Track daily habits, build streaks, earn aura points, and compete on the leaderboard. Your gamified habit tracker for lasting consistency.",
+  keywords: [
+    "habit tracker",
+    "habit tracking",
+    "streak",
+    "productivity",
+    "gamification",
+    "aura points",
+  ],
+  authors: [{ name: "Adarsh Raut" }],
+  creator: "Adarsh Raut",
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    siteName: "Habits Aura",
+    title: "Habits Aura - Build Habits, Track Consistency",
+    description:
+      "Track daily habits, build streaks, earn aura points, and compete on the leaderboard.",
+  },
+  twitter: {
+    card: "summary",
+    title: "Habits Aura - Build Habits, Track Consistency",
+    description:
+      "Track daily habits, build streaks, earn aura points, and compete on the leaderboard.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({
