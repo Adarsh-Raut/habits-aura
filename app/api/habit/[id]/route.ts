@@ -5,6 +5,7 @@ import { AURA_DELTA } from "@/lib/aura";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
+import { habitToggleLimiter, habitDeleteLimiter } from "@/lib/ratelimit";
 
 function calculateStreaks(
   completions: { dateKey: string }[],
@@ -88,6 +89,24 @@ export async function PATCH(
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { success, remaining, reset } = await habitToggleLimiter.limit(session.user.id);
+
+  if (!success) {
+    return NextResponse.json(
+      {
+        error: "Too many requests. Please try again later.",
+        retryAfter: Math.ceil((reset - Date.now()) / 1000),
+      },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": Math.ceil((reset - Date.now()) / 1000).toString(),
+          "X-RateLimit-Remaining": remaining.toString(),
+        },
+      },
+    );
   }
 
   const habitId = params.id;
@@ -178,6 +197,24 @@ export async function DELETE(
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { success, remaining, reset } = await habitDeleteLimiter.limit(session.user.id);
+
+  if (!success) {
+    return NextResponse.json(
+      {
+        error: "Too many requests. Please try again later.",
+        retryAfter: Math.ceil((reset - Date.now()) / 1000),
+      },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": Math.ceil((reset - Date.now()) / 1000).toString(),
+          "X-RateLimit-Remaining": remaining.toString(),
+        },
+      },
+    );
   }
 
   const habit = await prisma.habit.findFirst({

@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { getTodayDateKey, getTodayWeekdayKey } from "@/lib/date";
+import { habitCreateLimiter } from "@/lib/ratelimit";
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -50,6 +51,31 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email || !session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { success, remaining, reset } = await habitCreateLimiter.limit(
+      session.user.id,
+    );
+
+    if (!success) {
+      return NextResponse.json(
+        {
+          error: "Too many requests. Please try again later.",
+          retryAfter: Math.ceil((reset - Date.now()) / 1000),
+        },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": Math.ceil((reset - Date.now()) / 1000).toString(),
+            "X-RateLimit-Remaining": remaining.toString(),
+          },
+        },
+      );
+    }
+
     const body = await req.json();
     const { title, days } = body;
 
@@ -59,11 +85,6 @@ export async function POST(req: Request) {
       days.some((day) => typeof day !== "string")
     ) {
       return NextResponse.json({ error: "Invalid input" }, { status: 400 });
-    }
-
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const user = await prisma.user.findUnique({

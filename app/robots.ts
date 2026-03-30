@@ -1,4 +1,3 @@
-// app/robots.ts
 import { MetadataRoute } from "next";
 
 export default function robots(): MetadataRoute.Robots {
@@ -7,6 +6,6 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: "*",
       allow: "/",
     },
-    sitemap: "https://habits-aura.vercel.app/sitemap.xml",
+    sitemap: `${process.env.NEXTAUTH_URL || "https://habits-aura.vercel.app"}/sitemap.xml`,
   };
 }
