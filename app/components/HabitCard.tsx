@@ -1,13 +1,15 @@
 "use client";
 
-import { Dispatch, SetStateAction, useRef, useState } from "react";
+import { Dispatch, SetStateAction, useRef, useState, useEffect } from "react";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import { FaFireAlt } from "react-icons/fa";
 import { IoRocketOutline } from "react-icons/io5";
+import { MdDelete } from "react-icons/md";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import { toast } from "sonner";
 import { playCompleteSound } from "@/lib/audio";
 import type { Habit, HabitStatus } from "@/app/types/habit";
+import Portal from "./Portal";
 
 type HabitCardProps = {
   habit: Habit;
@@ -34,11 +36,61 @@ const titleVariants: Variants = {
 };
 
 export default function HabitCard({ habit, setHabits }: HabitCardProps) {
-  const [menuOpen, setMenuOpen] = useState<boolean>(false);
-  const menuRef = useRef<HTMLDivElement | null>(null);
+  const [menuState, setMenuState] = useState<{
+    top: number;
+    left: number;
+  } | null>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const isCompleted = habit.status === "COMPLETED";
   const isSkipped = habit.status === "SKIPPED";
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        menuRef.current &&
+        !menuRef.current.contains(event.target as Node) &&
+        buttonRef.current &&
+        !buttonRef.current.contains(event.target as Node)
+      ) {
+        setMenuState(null);
+      }
+    }
+
+    if (menuState) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [menuState]);
+
+  function openMenu() {
+    if (!buttonRef.current) return;
+
+    const rect = buttonRef.current.getBoundingClientRect();
+    const menuWidth = 200;
+    const menuHeight = 60;
+    const padding = 8;
+
+    let left = (rect.left + rect.right) / 2 - menuWidth / 2;
+
+    if (left < padding) {
+      left = padding;
+    }
+    if (left + menuWidth > window.innerWidth - padding) {
+      left = window.innerWidth - menuWidth - padding;
+    }
+
+    let top = rect.bottom + padding;
+    if (top + menuHeight > window.innerHeight) {
+      top = rect.top - menuHeight - padding;
+    }
+
+    setMenuState({ top, left });
+  }
 
   async function toggleHabit() {
     const previousStatus = habit.status;
@@ -80,12 +132,12 @@ export default function HabitCard({ habit, setHabits }: HabitCardProps) {
 
   async function deleteHabit() {
     setHabits((prev) => prev.filter((h) => h.id !== habit.id));
-    setMenuOpen(false);
+    setMenuState(null);
 
     try {
       const res = await fetch(`/api/habit/${habit.id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Failed to delete");
-      toast.error("Habit deleted");
+      if (!res.ok) throw new Error();
+      toast.success("Habit deleted");
     } catch {
       setHabits((prev) => [habit, ...prev]);
       toast.error("Failed to delete habit. Please try again.");
@@ -94,10 +146,10 @@ export default function HabitCard({ habit, setHabits }: HabitCardProps) {
 
   return (
     <div className="bg-neutral rounded-xl p-4 flex items-center justify-between">
-      {/* LEFT */}
       <div className="flex items-center gap-3 min-w-0">
         <button
-          onClick={() => setMenuOpen((v) => !v)}
+          ref={buttonRef}
+          onClick={openMenu}
           className="btn btn-ghost btn-sm btn-circle"
           aria-label="More Options"
         >
@@ -141,7 +193,6 @@ export default function HabitCard({ habit, setHabits }: HabitCardProps) {
         </div>
       </div>
 
-      {/* RIGHT */}
       <button
         onClick={toggleHabit}
         className={`w-10 h-10 rounded-md border-2 flex items-center justify-center transition-transform active:scale-95 ${
@@ -156,21 +207,31 @@ export default function HabitCard({ habit, setHabits }: HabitCardProps) {
         {isCompleted ? "✓" : isSkipped ? "✕" : null}
       </button>
 
-      {/* MENU */}
-      {menuOpen && (
+      <Portal>
         <div
           ref={menuRef}
-          className="absolute mt-12 bg-base-200 rounded-lg shadow-xl z-50"
+          className={`fixed bg-base-200 border border-base-300 rounded-xl p-1 sm:p-2 shadow-xl z-[100] transition-opacity duration-150 ${
+            menuState
+              ? "opacity-100 visible"
+              : "opacity-0 invisible pointer-events-none"
+          }`}
+          style={{
+            top: menuState?.top ?? 0,
+            left: menuState?.left ?? 0,
+            width: "auto",
+            minWidth: "60px",
+            maxWidth: "200px",
+          }}
         >
           <button
             onClick={deleteHabit}
-            className="px-4 py-2 text-error hover:bg-base-300 w-full text-left"
-            aria-label="Delete Habit"
+            className="w-full flex items-center justify-center gap-2 px-2 py-2 text-error hover:bg-base-300 rounded-lg transition-colors"
           >
-            Delete
+            <MdDelete className="w-5 h-5 shrink-0" />
+            <span className="hidden sm:inline">Delete</span>
           </button>
         </div>
-      )}
+      </Portal>
     </div>
   );
 }

@@ -2,3 +2,5 @@ add loading skeleton for habits home page, leaderboard home page and stats home 
 fix the logout button goint out of bounds
 
 fix the theme for all devices dark theme for all devices now.
+
+the logo and profile on right side navbar doesn't load on first load.
