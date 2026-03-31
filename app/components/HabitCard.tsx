@@ -11,6 +11,7 @@ import { playCompleteSound } from "@/lib/audio";
 import type { Habit, HabitStatus } from "@/app/types/habit";
 import Portal from "./Portal";
 import { isTodayHabitDay, getNextHabitDay } from "@/lib/date";
+import { useRouter } from "next/navigation";
 
 type HabitCardProps = {
   habit: Habit;
@@ -41,6 +42,7 @@ const HabitCard = memo(function HabitCard({ habit, setHabits }: HabitCardProps) 
     top: number;
     left: number;
   } | null>(null);
+  const router = useRouter();
   const buttonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -124,6 +126,8 @@ const HabitCard = memo(function HabitCard({ habit, setHabits }: HabitCardProps) 
           return { ...h, streak: data.currentStreak };
         }),
       );
+
+      router.refresh();
     } catch {
       setHabits((prev) =>
         prev.map((h) => {

@@ -9,6 +9,9 @@ type AvatarProps = {
   size?: number;
 };
 
+const blurDataURL =
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
+
 export default function Avatar({ src, name, size = 32 }: AvatarProps) {
   const [error, setError] = useState(false);
 
@@ -28,6 +31,8 @@ export default function Avatar({ src, name, size = 32 }: AvatarProps) {
         onError={() => setError(true)}
         className="object-cover"
         fill
+        placeholder="blur"
+        blurDataURL={blurDataURL}
       />
     </div>
   );
