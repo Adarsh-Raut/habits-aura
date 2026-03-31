@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { playCompleteSound } from "@/lib/audio";
 import type { Habit, HabitStatus } from "@/app/types/habit";
 import Portal from "./Portal";
-import { isTodayHabitDay, getNextHabitDay, DAY_KEYS } from "@/lib/date";
+import { isTodayHabitDay, getNextHabitDay } from "@/lib/date";
 
 type HabitCardProps = {
   habit: Habit;

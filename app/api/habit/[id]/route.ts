@@ -75,23 +75,21 @@ async function updateHabitStreaks(
   habitId: string,
   habitDays: string[],
   habitCreatedAt: Date,
-) {
+): Promise<{ currentStreak: number; longestStreak: number }> {
   const completions = await tx.habitCompletion.findMany({
     where: { habitId, action: "COMPLETED" },
     select: { dateKey: true },
     orderBy: { dateKey: "asc" },
   });
 
-  const { currentStreak, longestStreak } = calculateStreaks(
-    completions,
-    habitDays,
-    habitCreatedAt,
-  );
+  const streaks = calculateStreaks(completions, habitDays, habitCreatedAt);
 
   await tx.habit.update({
     where: { id: habitId },
-    data: { currentStreak, longestStreak },
+    data: streaks,
   });
+
+  return streaks;
 }
 
 /**
@@ -175,17 +173,7 @@ export async function PATCH(
         data: { auraPoints: { increment: AURA_DELTA } },
       });
 
-      const completions = await tx.habitCompletion.findMany({
-        where: { habitId, action: "COMPLETED" },
-        select: { dateKey: true },
-      });
-
-      const streaks = calculateStreaks(completions, habit.days, habit.createdAt);
-      await tx.habit.update({
-        where: { id: habitId },
-        data: streaks,
-      });
-
+      const streaks = await updateHabitStreaks(tx, habitId, habit.days, habit.createdAt);
       currentStreak = streaks.currentStreak;
       longestStreak = streaks.longestStreak;
 
@@ -203,17 +191,7 @@ export async function PATCH(
         data: { auraPoints: { decrement: AURA_DELTA } },
       });
 
-      const completions = await tx.habitCompletion.findMany({
-        where: { habitId, action: "COMPLETED" },
-        select: { dateKey: true },
-      });
-
-      const streaks = calculateStreaks(completions, habit.days, habit.createdAt);
-      await tx.habit.update({
-        where: { id: habitId },
-        data: streaks,
-      });
-
+      const streaks = await updateHabitStreaks(tx, habitId, habit.days, habit.createdAt);
       currentStreak = streaks.currentStreak;
       longestStreak = streaks.longestStreak;
 
@@ -224,17 +202,7 @@ export async function PATCH(
       where: { id: existing.id },
     });
 
-    const completions = await tx.habitCompletion.findMany({
-      where: { habitId, action: "COMPLETED" },
-      select: { dateKey: true },
-    });
-
-    const streaks = calculateStreaks(completions, habit.days, habit.createdAt);
-    await tx.habit.update({
-      where: { id: habitId },
-      data: streaks,
-    });
-
+    const streaks = await updateHabitStreaks(tx, habitId, habit.days, habit.createdAt);
     currentStreak = streaks.currentStreak;
     longestStreak = streaks.longestStreak;
   });
