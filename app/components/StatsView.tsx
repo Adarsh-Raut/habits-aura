@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import HabitHeatmap from "./HabitHeatmap";
+import EmptyState from "./EmptyState";
 import { FaFireAlt, FaTrophy } from "react-icons/fa";
 
 type Habit = {
@@ -21,9 +22,19 @@ type Props = {
 };
 
 export default function StatsView({ habits }: Props) {
+  if (habits.length === 0) {
+    return <EmptyState />;
+  }
+
   const [selectedHabitId, setSelectedHabitId] = useState(habits[0]?.id ?? null);
   const [stats, setStats] = useState<HabitStats | null>(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (selectedHabitId && !habits.some((h) => h.id === selectedHabitId)) {
+      setSelectedHabitId(habits[0]?.id ?? null);
+    }
+  }, [habits, selectedHabitId]);
 
   useEffect(() => {
     if (!selectedHabitId) return;
@@ -31,7 +42,13 @@ export default function StatsView({ habits }: Props) {
     setLoading(true);
 
     fetch(`/api/habit/${selectedHabitId}/stats`)
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) {
+          setStats(null);
+          return;
+        }
+        return res.json();
+      })
       .then(setStats)
       .finally(() => setLoading(false));
   }, [selectedHabitId]);
@@ -88,10 +105,12 @@ export default function StatsView({ habits }: Props) {
             <h2 className="text-lg font-semibold mb-1">Yearly Consistency</h2>
             <p className="text-sm opacity-60 mb-4">Calendar activity map</p>
 
-            <HabitHeatmap
-              calendar={stats.calendar}
-              createdAt={stats.createdAt}
-            />
+            {stats.calendar && (
+              <HabitHeatmap
+                calendar={stats.calendar}
+                createdAt={stats.createdAt}
+              />
+            )}
           </div>
         </>
       )}

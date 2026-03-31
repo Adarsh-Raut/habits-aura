@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getTodayDate, getTodayDateKey, DAY_KEYS } from "@/lib/date";
+import { getTodayDate, getTodayDateKey, DAY_KEYS, isTodayHabitDay } from "@/lib/date";
 import { AURA_DELTA } from "@/lib/aura";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -139,6 +139,13 @@ export async function PATCH(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
+  if (!isTodayHabitDay(habit.days)) {
+    return NextResponse.json(
+      { error: "Cannot toggle habit on non-scheduled days" },
+      { status: 400 }
+    );
+  }
+
   let currentStreak = 0;
   let longestStreak = 0;
 
@@ -193,7 +200,7 @@ export async function PATCH(
 
       await tx.user.update({
         where: { id: session.user.id },
-        data: { auraPoints: { decrement: AURA_DELTA * 2 } },
+        data: { auraPoints: { decrement: AURA_DELTA } },
       });
 
       const completions = await tx.habitCompletion.findMany({
@@ -215,11 +222,6 @@ export async function PATCH(
 
     await tx.habitCompletion.delete({
       where: { id: existing.id },
-    });
-
-    await tx.user.update({
-      where: { id: session.user.id },
-      data: { auraPoints: { increment: AURA_DELTA } },
     });
 
     const completions = await tx.habitCompletion.findMany({
@@ -369,6 +371,22 @@ export async function DELETE(
 
   if (!habit) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  const completions = await prisma.habitCompletion.findMany({
+    where: { habitId: params.id },
+    select: { action: true },
+  });
+
+  const completedCount = completions.filter((c) => c.action === "COMPLETED").length;
+  const skippedCount = completions.filter((c) => c.action === "SKIPPED").length;
+  const refund = completedCount * AURA_DELTA + skippedCount * AURA_DELTA;
+
+  if (refund > 0) {
+    await prisma.user.update({
+      where: { id: session.user.id },
+      data: { auraPoints: { decrement: refund } },
+    });
   }
 
   await prisma.habit.delete({
