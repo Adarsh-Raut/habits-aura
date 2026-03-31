@@ -104,21 +104,23 @@ export default function HabitCard({ habit, setHabits }: HabitCardProps) {
     setHabits((prev) =>
       prev.map((h) => {
         if (h.id !== habit.id) return h;
-
-        const newStreak =
-          previousStatus === "COMPLETED" && newStatus !== "COMPLETED"
-            ? h.streak - 1
-            : newStatus === "COMPLETED"
-              ? h.streak + 1
-              : h.streak;
-
-        return { ...h, status: newStatus, streak: newStreak };
+        return { ...h, status: newStatus };
       }),
     );
 
     try {
       const res = await fetch(`/api/habit/${habit.id}`, { method: "PATCH" });
+      
       if (!res.ok) throw new Error("Failed to update");
+      
+      const data = await res.json();
+      
+      setHabits((prev) =>
+        prev.map((h) => {
+          if (h.id !== habit.id) return h;
+          return { ...h, streak: data.currentStreak };
+        }),
+      );
     } catch {
       setHabits((prev) =>
         prev.map((h) => {

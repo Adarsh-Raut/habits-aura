@@ -10,47 +10,62 @@ import { habitToggleLimiter, habitDeleteLimiter } from "@/lib/ratelimit";
 function calculateStreaks(
   completions: { dateKey: string }[],
   habitDays: string[],
+  habitCreatedAt: Date,
 ): { currentStreak: number; longestStreak: number } {
   if (completions.length === 0) {
     return { currentStreak: 0, longestStreak: 0 };
   }
 
   const completionMap = new Set(completions.map((c) => c.dateKey));
-  const sortedDates = Array.from(completionMap).sort().reverse();
 
-  let currentStreak = 0;
-  let longestStreak = 0;
-  let tempStreak = 0;
+  const createdDate = new Date(habitCreatedAt);
+  createdDate.setHours(0, 0, 0, 0);
+  const createdDateKey = createdDate.toISOString().split("T")[0];
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
+
+  // Calculate current streak (from today going backwards)
+  let currentStreak = 0;
 
   for (let i = 0; i < 1825; i++) {
     const currentDate = new Date(today);
     currentDate.setDate(currentDate.getDate() - i);
     const dateKey = currentDate.toISOString().split("T")[0];
+
+    if (dateKey < createdDateKey) {
+      break;
+    }
+
     const weekday = DAY_KEYS[currentDate.getDay()];
 
     if (habitDays.includes(weekday)) {
       if (completionMap.has(dateKey)) {
-        tempStreak++;
-        if (i === 0 || currentStreak > 0) {
-          currentStreak = tempStreak;
-        }
+        currentStreak++;
       } else {
-        if (i === 0) {
-          currentStreak = 0;
-        }
-        longestStreak = Math.max(longestStreak, tempStreak);
-        tempStreak = 0;
-        if (currentStreak === 0 && i > 0) {
-          break;
-        }
+        break;
       }
     }
   }
 
-  longestStreak = Math.max(longestStreak, tempStreak, currentStreak);
+  // Calculate longest streak (from creation date going forward)
+  let longestStreak = 0;
+  let tempStreak = 0;
+  const maxDate = new Date(today);
+
+  for (let d = new Date(createdDate); d <= maxDate; d.setDate(d.getDate() + 1)) {
+    const dateKey = d.toISOString().split("T")[0];
+    const weekday = DAY_KEYS[d.getDay()];
+
+    if (habitDays.includes(weekday)) {
+      if (completionMap.has(dateKey)) {
+        tempStreak++;
+        longestStreak = Math.max(longestStreak, tempStreak);
+      } else {
+        tempStreak = 0;
+      }
+    }
+  }
 
   return { currentStreak, longestStreak };
 }
@@ -59,6 +74,7 @@ async function updateHabitStreaks(
   tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0],
   habitId: string,
   habitDays: string[],
+  habitCreatedAt: Date,
 ) {
   const completions = await tx.habitCompletion.findMany({
     where: { habitId, action: "COMPLETED" },
@@ -69,6 +85,7 @@ async function updateHabitStreaks(
   const { currentStreak, longestStreak } = calculateStreaks(
     completions,
     habitDays,
+    habitCreatedAt,
   );
 
   await tx.habit.update({
@@ -115,12 +132,15 @@ export async function PATCH(
 
   const habit = await prisma.habit.findUnique({
     where: { id: habitId },
-    select: { id: true, userId: true, days: true },
+    select: { id: true, userId: true, days: true, createdAt: true },
   });
 
   if (!habit || habit.userId !== session.user.id) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
+
+  let currentStreak = 0;
+  let longestStreak = 0;
 
   await prisma.$transaction(async (tx) => {
     const existing = await tx.habitCompletion.findUnique({
@@ -148,7 +168,19 @@ export async function PATCH(
         data: { auraPoints: { increment: AURA_DELTA } },
       });
 
-      await updateHabitStreaks(tx, habitId, habit.days);
+      const completions = await tx.habitCompletion.findMany({
+        where: { habitId, action: "COMPLETED" },
+        select: { dateKey: true },
+      });
+
+      const streaks = calculateStreaks(completions, habit.days, habit.createdAt);
+      await tx.habit.update({
+        where: { id: habitId },
+        data: streaks,
+      });
+
+      currentStreak = streaks.currentStreak;
+      longestStreak = streaks.longestStreak;
 
       return;
     }
@@ -164,7 +196,19 @@ export async function PATCH(
         data: { auraPoints: { decrement: AURA_DELTA * 2 } },
       });
 
-      await updateHabitStreaks(tx, habitId, habit.days);
+      const completions = await tx.habitCompletion.findMany({
+        where: { habitId, action: "COMPLETED" },
+        select: { dateKey: true },
+      });
+
+      const streaks = calculateStreaks(completions, habit.days, habit.createdAt);
+      await tx.habit.update({
+        where: { id: habitId },
+        data: streaks,
+      });
+
+      currentStreak = streaks.currentStreak;
+      longestStreak = streaks.longestStreak;
 
       return;
     }
@@ -178,14 +222,30 @@ export async function PATCH(
       data: { auraPoints: { increment: AURA_DELTA } },
     });
 
-    await updateHabitStreaks(tx, habitId, habit.days);
+    const completions = await tx.habitCompletion.findMany({
+      where: { habitId, action: "COMPLETED" },
+      select: { dateKey: true },
+    });
+
+    const streaks = calculateStreaks(completions, habit.days, habit.createdAt);
+    await tx.habit.update({
+      where: { id: habitId },
+      data: streaks,
+    });
+
+    currentStreak = streaks.currentStreak;
+    longestStreak = streaks.longestStreak;
   });
 
   revalidatePath("/");
   revalidatePath("/leaderboard");
   revalidatePath("/stats");
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ 
+    ok: true, 
+    currentStreak, 
+    longestStreak 
+  });
 }
 
 /* ---------------- EDIT HABIT ---------------- */
@@ -203,7 +263,7 @@ export async function PUT(
 
   const habit = await prisma.habit.findUnique({
     where: { id: habitId },
-    select: { id: true, userId: true },
+    select: { id: true, userId: true, days: true, createdAt: true },
   });
 
   if (!habit || habit.userId !== session.user.id) {
@@ -217,15 +277,22 @@ export async function PUT(
     return NextResponse.json({ error: "Invalid input" }, { status: 400 });
   }
 
-  await prisma.habit.update({
-    where: { id: habitId },
-    data: {
-      title: title.trim(),
-      days,
-    },
+  const newDays = days;
+
+  await prisma.$transaction(async (tx) => {
+    await tx.habit.update({
+      where: { id: habitId },
+      data: {
+        title: title.trim(),
+        days: newDays,
+      },
+    });
+
+    await updateHabitStreaks(tx, habitId, newDays, habit.createdAt);
   });
 
   revalidatePath("/");
+  revalidatePath("/stats");
 
   return NextResponse.json({ ok: true });
 }
