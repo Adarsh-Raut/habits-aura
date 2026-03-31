@@ -29,12 +29,25 @@ const HABIT_SUGGESTIONS = [
   "🇪🇸 Learn Spanish",
 ];
 
-export default function CreateHabitForm() {
+type CreateHabitFormProps = {
+  habitId?: string;
+  initialTitle?: string;
+  initialDays?: string[];
+};
+
+export default function CreateHabitForm({
+  habitId,
+  initialTitle = "",
+  initialDays = [],
+}: CreateHabitFormProps) {
   const router = useRouter();
   const submitButtonRef = useRef<HTMLButtonElement>(null);
+  const isEditing = !!habitId;
 
-  const [title, setTitle] = useState("");
-  const [days, setDays] = useState<string[]>(Object.keys(DAY_MAP));
+  const [title, setTitle] = useState(initialTitle);
+  const [days, setDays] = useState<string[]>(
+    initialDays.length > 0 ? initialDays : Object.keys(DAY_MAP),
+  );
   const [loading, setLoading] = useState(false);
 
   const toggleDay = (day: string) => {
@@ -50,33 +63,46 @@ export default function CreateHabitForm() {
     setLoading(true);
 
     try {
-      const res = await fetch("/api/habit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: title.trim(), days }),
-      });
-
-      if (!res.ok) throw new Error();
-
-      playCompleteSound();
-
-      if (submitButtonRef.current) {
-        const rect = submitButtonRef.current.getBoundingClientRect();
-        const x = (rect.left + rect.width / 2) / window.innerWidth;
-        const y = (rect.top + rect.height / 2) / window.innerHeight;
-        const confetti = (await import("canvas-confetti")).default;
-        confetti({
-          particleCount: 120,
-          spread: 80,
-          origin: { x, y },
+      if (isEditing) {
+        const res = await fetch(`/api/habit/${habitId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title: title.trim(), days }),
         });
+
+        if (!res.ok) throw new Error();
+
+        toast.success("Habit updated!");
+      } else {
+        const res = await fetch("/api/habit", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title: title.trim(), days }),
+        });
+
+        if (!res.ok) throw new Error();
+
+        playCompleteSound();
+
+        if (submitButtonRef.current) {
+          const rect = submitButtonRef.current.getBoundingClientRect();
+          const x = (rect.left + rect.width / 2) / window.innerWidth;
+          const y = (rect.top + rect.height / 2) / window.innerHeight;
+          const confetti = (await import("canvas-confetti")).default;
+          confetti({
+            particleCount: 120,
+            spread: 80,
+            origin: { x, y },
+          });
+        }
+
+        toast.success("Habit created!");
       }
 
-      toast.success("Habit created!");
       router.replace("/");
       router.refresh();
     } catch {
-      alert("Failed to create habit");
+      toast.error(isEditing ? "Failed to update habit" : "Failed to create habit");
       setLoading(false);
     }
   };
@@ -86,7 +112,9 @@ export default function CreateHabitForm() {
       <div className="max-w-md mx-auto">
         <Link
           href="/"
-          className={`btn btn-ghost gap-2 mb-4 ${loading && "pointer-events-none opacity-50"}`}
+          className={`btn btn-ghost gap-2 mb-4 ${
+            loading && "pointer-events-none opacity-50"
+          }`}
         >
           <FaArrowLeft />
           Back
@@ -97,10 +125,9 @@ export default function CreateHabitForm() {
             loading ? "opacity-70" : ""
           }`}
         >
-          {/* TITLE */}
           <div>
             <label className="text-base sm:text-lg font-medium mb-2 block">
-              My new habit
+              {isEditing ? "Edit habit" : "My new habit"}
             </label>
 
             <input
@@ -113,26 +140,26 @@ export default function CreateHabitForm() {
             />
           </div>
 
-          {/* SUGGESTIONS */}
-          <div>
-            <p className="text-sm text-gray-400 mb-2">Quick suggestions</p>
-            <div className="flex flex-wrap gap-2">
-              {HABIT_SUGGESTIONS.map((h) => (
-                <button
-                  key={h}
-                  type="button"
-                  disabled={loading}
-                  onClick={() => setTitle(h)}
-                  className="badge badge-base-200 badge-lg cursor-pointer"
-                  aria-label="Suggestion"
-                >
-                  {h}
-                </button>
-              ))}
+          {!isEditing && (
+            <div>
+              <p className="text-sm text-gray-400 mb-2">Quick suggestions</p>
+              <div className="flex flex-wrap gap-2">
+                {HABIT_SUGGESTIONS.map((h) => (
+                  <button
+                    key={h}
+                    type="button"
+                    disabled={loading}
+                    onClick={() => setTitle(h)}
+                    className="badge badge-base-200 badge-lg cursor-pointer"
+                    aria-label="Suggestion"
+                  >
+                    {h}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
-          {/* DAYS */}
           <div>
             <label className="text-sm sm:text-base font-medium mb-3 block">
               Days
@@ -156,15 +183,20 @@ export default function CreateHabitForm() {
             </div>
           </div>
 
-          {/* SUBMIT */}
           <button
             ref={submitButtonRef}
             type="submit"
             disabled={loading}
             className="btn bg-[#05C26A] text-white btn-block"
-            aria-label="Create Habit"
+            aria-label={isEditing ? "Save Changes" : "Create Habit"}
           >
-            {loading ? "Creating..." : "Create Habit"}
+            {loading
+              ? isEditing
+                ? "Saving..."
+                : "Creating..."
+              : isEditing
+                ? "Save Changes"
+                : "Create Habit"}
           </button>
         </div>
       </div>

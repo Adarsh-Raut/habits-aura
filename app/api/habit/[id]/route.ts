@@ -188,6 +188,48 @@ export async function PATCH(
   return NextResponse.json({ ok: true });
 }
 
+/* ---------------- EDIT HABIT ---------------- */
+
+export async function PUT(
+  req: Request,
+  { params }: { params: { id: string } },
+) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const habitId = params.id;
+
+  const habit = await prisma.habit.findUnique({
+    where: { id: habitId },
+    select: { id: true, userId: true },
+  });
+
+  if (!habit || habit.userId !== session.user.id) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  const body = await req.json();
+  const { title, days } = body;
+
+  if (!title || !Array.isArray(days)) {
+    return NextResponse.json({ error: "Invalid input" }, { status: 400 });
+  }
+
+  await prisma.habit.update({
+    where: { id: habitId },
+    data: {
+      title: title.trim(),
+      days,
+    },
+  });
+
+  revalidatePath("/");
+
+  return NextResponse.json({ ok: true });
+}
+
 /* ---------------- DELETE HABIT ---------------- */
 
 export async function DELETE(

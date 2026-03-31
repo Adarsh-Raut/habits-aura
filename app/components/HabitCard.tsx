@@ -3,8 +3,8 @@
 import { Dispatch, SetStateAction, useRef, useState, useEffect } from "react";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import { FaFireAlt } from "react-icons/fa";
-import { IoRocketOutline } from "react-icons/io5";
-import { MdDelete } from "react-icons/md";
+import { IoRocketOutline, IoTrashBin, IoPencil } from "react-icons/io5";
+import Link from "next/link";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import { toast } from "sonner";
 import { playCompleteSound } from "@/lib/audio";
@@ -72,7 +72,7 @@ export default function HabitCard({ habit, setHabits }: HabitCardProps) {
 
     const rect = buttonRef.current.getBoundingClientRect();
     const menuWidth = 200;
-    const menuHeight = 60;
+    const menuHeight = 120;
     const padding = 8;
 
     let left = (rect.left + rect.right) / 2 - menuWidth / 2;
@@ -210,7 +210,7 @@ export default function HabitCard({ habit, setHabits }: HabitCardProps) {
       <Portal>
         <div
           ref={menuRef}
-          className={`fixed bg-base-200 border border-base-300 rounded-xl p-1 sm:p-2 shadow-xl z-[100] transition-opacity duration-150 ${
+          className={`fixed bg-base-200 border border-base-300 rounded-xl p-1 sm:p-2 shadow-xl z-[100] w-auto min-w-[80px] sm:min-w-[140px] max-w-[200px] transition-opacity duration-150 ${
             menuState
               ? "opacity-100 visible"
               : "opacity-0 invisible pointer-events-none"
@@ -218,16 +218,21 @@ export default function HabitCard({ habit, setHabits }: HabitCardProps) {
           style={{
             top: menuState?.top ?? 0,
             left: menuState?.left ?? 0,
-            width: "auto",
-            minWidth: "60px",
-            maxWidth: "200px",
           }}
         >
+          <Link
+            href={`/habit/${habit.id}/edit`}
+            className="w-full flex items-center gap-3 px-3 py-2 text-gray-200 hover:bg-base-300 rounded-lg transition-colors"
+            onClick={() => setMenuState(null)}
+          >
+            <IoPencil className="w-5 h-5 shrink-0" />
+            <span className="hidden sm:inline">Edit</span>
+          </Link>
           <button
             onClick={deleteHabit}
-            className="w-full flex items-center justify-center gap-2 px-2 py-2 text-error hover:bg-base-300 rounded-lg transition-colors"
+            className="w-full flex items-center gap-3 px-3 py-2 text-error hover:bg-base-300 rounded-lg transition-colors"
           >
-            <MdDelete className="w-5 h-5 shrink-0" />
+            <IoTrashBin className="w-5 h-5 shrink-0" />
             <span className="hidden sm:inline">Delete</span>
           </button>
         </div>
