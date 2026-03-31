@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { playCompleteSound } from "@/lib/audio";
 import type { Habit, HabitStatus } from "@/app/types/habit";
 import Portal from "./Portal";
+import { isTodayHabitDay, getNextHabitDay, DAY_KEYS } from "@/lib/date";
 
 type HabitCardProps = {
   habit: Habit;
@@ -45,6 +46,8 @@ export default function HabitCard({ habit, setHabits }: HabitCardProps) {
 
   const isCompleted = habit.status === "COMPLETED";
   const isSkipped = habit.status === "SKIPPED";
+  const isHabitDay = isTodayHabitDay(habit.days);
+  const nextHabitDay = getNextHabitDay(habit.days);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -147,7 +150,7 @@ export default function HabitCard({ habit, setHabits }: HabitCardProps) {
   }
 
   return (
-    <div className="bg-neutral rounded-xl p-4 flex items-center justify-between">
+    <div className={`bg-neutral rounded-xl p-4 flex items-center justify-between transition-all duration-300 ${!isHabitDay ? "opacity-50 grayscale" : ""}`}>
       <div className="flex items-center gap-3 min-w-0">
         <button
           ref={buttonRef}
@@ -192,19 +195,27 @@ export default function HabitCard({ habit, setHabits }: HabitCardProps) {
               <IoRocketOutline className="w-3 h-3" />
             </span>
           )}
+          {!isHabitDay && nextHabitDay && (
+            <span className="text-sm text-gray-400 ml-2 shrink-0 font-medium">
+              Next: {nextHabitDay}
+            </span>
+          )}
         </div>
       </div>
 
       <button
-        onClick={toggleHabit}
-        className={`w-10 h-10 rounded-md border-2 flex items-center justify-center transition-transform active:scale-95 ${
+        onClick={isHabitDay ? toggleHabit : undefined}
+        disabled={!isHabitDay}
+        className={`w-10 h-10 rounded-md border-2 flex items-center justify-center transition-transform ${
           isCompleted
             ? "border-success text-success"
             : isSkipped
               ? "border-error text-error"
-              : "border-gray-500"
+              : isHabitDay
+                ? "border-gray-500 cursor-pointer active:scale-95"
+                : "border-gray-700 text-gray-600 cursor-not-allowed"
         }`}
-        aria-label="Toggle Habit"
+        aria-label={!isHabitDay ? `Next: ${nextHabitDay}` : "Toggle Habit"}
       >
         {isCompleted ? "✓" : isSkipped ? "✕" : null}
       </button>

@@ -278,8 +278,40 @@ export async function PUT(
   }
 
   const newDays = days;
+  const todayKey = getTodayDateKey();
+  const todayWeekday = DAY_KEYS[new Date().getDay()];
+
+  const daysRemoved = habit.days.filter((d) => !newDays.includes(d));
+  const todayWasRemoved = daysRemoved.includes(todayWeekday);
+
+  let deletedCompletionAction = null;
 
   await prisma.$transaction(async (tx) => {
+    if (todayWasRemoved) {
+      const existingCompletion = await tx.habitCompletion.findUnique({
+        where: {
+          habitId_dateKey: {
+            habitId,
+            dateKey: todayKey,
+          },
+        },
+      });
+
+      if (existingCompletion) {
+        deletedCompletionAction = existingCompletion.action;
+        await tx.habitCompletion.delete({
+          where: { id: existingCompletion.id },
+        });
+
+        if (existingCompletion.action === "COMPLETED") {
+          await tx.user.update({
+            where: { id: session.user.id },
+            data: { auraPoints: { decrement: AURA_DELTA } },
+          });
+        }
+      }
+    }
+
     await tx.habit.update({
       where: { id: habitId },
       data: {
@@ -292,6 +324,7 @@ export async function PUT(
   });
 
   revalidatePath("/");
+  revalidatePath("/leaderboard");
   revalidatePath("/stats");
 
   return NextResponse.json({ ok: true });

@@ -16,4 +16,5 @@ export type Habit = {
   status: HabitStatus;
   createdAt: Date;
   streak: number;
+  days: string[];
 };

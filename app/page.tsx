@@ -18,6 +18,7 @@ export default async function Page() {
       title: true,
       createdAt: true,
       currentStreak: true,
+      days: true,
       completions: {
         select: { action: true, dateKey: true },
       },
@@ -36,6 +37,7 @@ export default async function Page() {
       createdAt: habit.createdAt,
       status: todayCompletion?.action ?? "NONE",
       streak: habit.currentStreak,
+      days: habit.days,
     };
   });
 
