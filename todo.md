@@ -1,6 +1,3 @@
-add loading skeleton for habits home page, leaderboard home page and stats home page
-fix the logout button goint out of bounds
-
-fix the theme for all devices dark theme for all devices now.
+the first habit created should appear first on home page as well.
 
 the logo and profile on right side navbar doesn't load on first load.

@@ -22,7 +22,7 @@ export default async function Page() {
         select: { action: true, dateKey: true },
       },
     },
-    orderBy: { createdAt: "desc" },
+    orderBy: { createdAt: "asc" },
   });
 
   const habits: Habit[] = dbHabits.map((habit) => {

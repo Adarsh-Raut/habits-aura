@@ -12,10 +12,22 @@ import Image from "next/image";
 const Navbar = () => {
   const pathname = usePathname();
 
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
 
   if (pathname === "/signin") {
     return null;
+  }
+
+  if (status === "loading") {
+    return (
+      <nav className="navbar px-2 sm:px-4 relative z-50">
+        <div className="flex-1 items-center gap-1 sm:gap-2">
+          <div className="skeleton w-10 h-10" />
+          <div className="skeleton w-20 h-6 hidden sm:block" />
+        </div>
+        <div className="skeleton w-10 h-10 rounded-full" />
+      </nav>
+    );
   }
 
   return (
