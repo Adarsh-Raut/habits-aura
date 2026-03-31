@@ -1,6 +1,6 @@
 "use client";
 
-import { Dispatch, SetStateAction, useRef, useState, useEffect } from "react";
+import { memo, Dispatch, SetStateAction, useRef, useState, useEffect } from "react";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import { FaFireAlt } from "react-icons/fa";
 import { IoRocketOutline, IoTrashBin, IoPencil } from "react-icons/io5";
@@ -36,7 +36,7 @@ const titleVariants: Variants = {
   },
 };
 
-export default function HabitCard({ habit, setHabits }: HabitCardProps) {
+const HabitCard = memo(function HabitCard({ habit, setHabits }: HabitCardProps) {
   const [menuState, setMenuState] = useState<{
     top: number;
     left: number;
@@ -252,4 +252,6 @@ export default function HabitCard({ habit, setHabits }: HabitCardProps) {
       </Portal>
     </div>
   );
-}
+});
+
+export default HabitCard;

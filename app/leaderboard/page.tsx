@@ -1,9 +1,11 @@
 import Leaderboard from "../components/LeaderBoard";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { headers } from "next/headers";
+import { prisma } from "@/lib/prisma";
 
-type LeaderboardApiUser = {
+export const revalidate = 60;
+
+type LeaderboardUser = {
   id: string;
   name: string;
   avatar: string;
@@ -14,29 +16,38 @@ type LeaderboardApiUser = {
 export default async function Page() {
   const session = await getServerSession(authOptions);
 
-  const headersList = headers();
-  const host = headersList.get("host");
-  const protocol = process.env.NODE_ENV === "development" ? "http" : "https";
+  const users = await prisma.user.findMany({
+    select: {
+      id: true,
+      name: true,
+      image: true,
+      auraPoints: true,
+    },
+    orderBy: {
+      auraPoints: "desc",
+    },
+  });
 
-  const res = await fetch(`${protocol}://${host}/api/leaderboard`);
+  const leaderboardData: LeaderboardUser[] = users.map((user, index) => {
+    const name = user.name ?? "Anonymous";
 
-  if (!res.ok) {
-    throw new Error("Failed to load leaderboard");
-  }
-
-  const users: LeaderboardApiUser[] = await res.json();
+    return {
+      rank: index + 1,
+      id: user.id,
+      name,
+      auraPoints: user.auraPoints,
+      avatar:
+        user.image && user.image.trim() !== ""
+          ? user.image
+          : `https://ui-avatars.com/api/?name=${encodeURIComponent(
+              name,
+            )}&background=1f2937&color=fff`,
+    };
+  });
 
   const currentUser = session
-    ? users.find((u) => u.id === session.user.id)
+    ? leaderboardData.find((u) => u.id === session.user.id)
     : null;
-
-  const leaderboardData = users.map((u) => ({
-    id: u.id,
-    name: u.name,
-    avatar: u.avatar,
-    rank: u.rank,
-    auraPoints: u.auraPoints,
-  }));
 
   return (
     <>
