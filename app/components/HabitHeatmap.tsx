@@ -1,3 +1,7 @@
+"use client";
+
+import { memo } from "react";
+
 type Props = {
   calendar: Record<string, number>;
   createdAt: string;
@@ -13,7 +17,7 @@ function getDateKey(date: Date) {
   );
 }
 
-export default function HabitHeatmap({ calendar, createdAt }: Props) {
+const HabitHeatmap = memo(function HabitHeatmap({ calendar, createdAt }: Props) {
   const completedDays = new Set(Object.keys(calendar));
 
   const today = new Date();
@@ -87,4 +91,6 @@ export default function HabitHeatmap({ calendar, createdAt }: Props) {
       </div>
     </div>
   );
-}
+});
+
+export default HabitHeatmap;

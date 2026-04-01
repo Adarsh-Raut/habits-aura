@@ -6,6 +6,12 @@ import { FaRegCheckSquare } from "react-icons/fa";
 import { GoTrophy } from "react-icons/go";
 import { IoStatsChart } from "react-icons/io5";
 
+const menuItems = [
+  { name: "HABITS", icon: FaRegCheckSquare, path: "/" },
+  { name: "LEADERBOARD", icon: GoTrophy, path: "/leaderboard" },
+  { name: "STATS", icon: IoStatsChart, path: "/stats" },
+];
+
 export default function Sidebar() {
   const pathname = usePathname();
 
@@ -20,12 +26,6 @@ export default function Sidebar() {
 
     if (drawer) drawer.checked = false;
   };
-
-  const menuItems = [
-    { name: "HABITS", icon: FaRegCheckSquare, path: "/" },
-    { name: "LEADERBOARD", icon: GoTrophy, path: "/leaderboard" },
-    { name: "STATS", icon: IoStatsChart, path: "/stats" },
-  ];
 
   return (
     <aside className="w-64 h-full bg-[#1E2330] p-4 flex flex-col">
