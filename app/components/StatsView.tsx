@@ -1,24 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import HabitHeatmap from "./HabitHeatmap";
 import EmptyState from "./EmptyState";
 import { FaFireAlt, FaTrophy } from "react-icons/fa";
+import { useState, useEffect } from "react";
 
-type Habit = {
+type HabitWithStats = {
   id: string;
   title: string;
-};
-
-type HabitStats = {
-  createdAt: string;
   currentStreak: number;
   longestStreak: number;
+  createdAt: string;
   calendar: Record<string, number>;
 };
 
 type Props = {
-  habits: Habit[];
+  habits: HabitWithStats[];
 };
 
 export default function StatsView({ habits }: Props) {
@@ -27,31 +24,14 @@ export default function StatsView({ habits }: Props) {
   }
 
   const [selectedHabitId, setSelectedHabitId] = useState(habits[0]?.id ?? null);
-  const [stats, setStats] = useState<HabitStats | null>(null);
-  const [loading, setLoading] = useState(false);
+
+  const selectedHabit = habits.find((h) => h.id === selectedHabitId) ?? null;
 
   useEffect(() => {
     if (selectedHabitId && !habits.some((h) => h.id === selectedHabitId)) {
       setSelectedHabitId(habits[0]?.id ?? null);
     }
   }, [habits, selectedHabitId]);
-
-  useEffect(() => {
-    if (!selectedHabitId) return;
-
-    setLoading(true);
-
-    fetch(`/api/habit/${selectedHabitId}/stats`)
-      .then((res) => {
-        if (!res.ok) {
-          setStats(null);
-          return;
-        }
-        return res.json();
-      })
-      .then(setStats)
-      .finally(() => setLoading(false));
-  }, [selectedHabitId]);
 
   return (
     <div className="space-y-6 text-gray-200">
@@ -72,22 +52,13 @@ export default function StatsView({ habits }: Props) {
         </select>
       </div>
 
-      {/* Loading skeleton */}
-      {loading && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="skeleton h-24 rounded-xl" />
-          <div className="skeleton h-24 rounded-xl" />
-          <div className="skeleton h-56 md:col-span-2 rounded-xl" />
-        </div>
-      )}
-
       {/* Stats */}
-      {stats && !loading && (
+      {selectedHabit && (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <StatCard
               title="Current Streak"
-              value={stats.currentStreak}
+              value={selectedHabit.currentStreak}
               icon={<FaFireAlt className="text-orange-500" />}
               subtitle="Days in a row"
               success
@@ -95,7 +66,7 @@ export default function StatsView({ habits }: Props) {
 
             <StatCard
               title="Longest Streak"
-              value={stats.longestStreak}
+              value={selectedHabit.longestStreak}
               icon={<FaTrophy className="text-warning" />}
               subtitle="Best consistency"
             />
@@ -105,10 +76,10 @@ export default function StatsView({ habits }: Props) {
             <h2 className="text-lg font-semibold mb-1">Yearly Consistency</h2>
             <p className="text-sm opacity-60 mb-4">Calendar activity map</p>
 
-            {stats.calendar && (
+            {selectedHabit.calendar && (
               <HabitHeatmap
-                calendar={stats.calendar}
-                createdAt={stats.createdAt}
+                calendar={selectedHabit.calendar}
+                createdAt={selectedHabit.createdAt}
               />
             )}
           </div>
