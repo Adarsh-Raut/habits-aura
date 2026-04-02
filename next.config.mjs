@@ -1,14 +1,14 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  poweredByHeader: false,
   eslint: {
     ignoreDuringBuilds: true,
   },
+  experimental: {
+    optimizePackageImports: ["react-icons", "framer-motion"],
+  },
   images: {
     remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "ui-avatars.com",
-      },
       {
         protocol: "https",
         hostname: "lh3.googleusercontent.com",

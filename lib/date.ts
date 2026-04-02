@@ -4,6 +4,10 @@ export function getTodayWeekdayKey() {
   return DAY_KEYS[new Date().getDay()];
 }
 
+export function getDayIndex(dayKey: string) {
+  return DAY_KEYS.indexOf(dayKey);
+}
+
 export function getTodayDate() {
   const d = new Date();
   d.setHours(0, 0, 0, 0);
@@ -33,6 +37,26 @@ export function getNextHabitDay(
   if (habitDays.length === 0) return null;
 
   const currentDay = fromDate.getDay();
+
+  for (let i = 0; i < 7; i++) {
+    const checkDay = (currentDay + i) % 7;
+    const dayKey = DAY_KEYS[checkDay];
+    if (habitDays.includes(dayKey)) {
+      return dayKey;
+    }
+  }
+
+  return null;
+}
+
+export function getNextHabitDayFromWeekday(
+  habitDays: string[],
+  weekdayKey: string,
+): string | null {
+  if (habitDays.length === 0) return null;
+
+  const currentDay = getDayIndex(weekdayKey);
+  if (currentDay === -1) return null;
 
   for (let i = 0; i < 7; i++) {
     const checkDay = (currentDay + i) % 7;

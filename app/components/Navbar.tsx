@@ -1,18 +1,14 @@
-"use client";
-
 import { DiAtom } from "react-icons/di";
 import { FaPlus } from "react-icons/fa6";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import UserProfile from "./UserProfile";
+import type { Session } from "next-auth";
 
-export default function Navbar() {
-  const pathname = usePathname();
+type NavbarProps = {
+  user?: Session["user"];
+};
 
-  if (pathname === "/signin") {
-    return null;
-  }
-
+export default function Navbar({ user }: NavbarProps) {
   return (
     <nav className="navbar px-2 sm:px-4 relative z-50">
       <div className="flex-1 items-center gap-1 sm:gap-2">
@@ -35,7 +31,7 @@ export default function Navbar() {
       </div>
 
       <div className="flex-none">
-        <UserProfile />
+        <UserProfile user={user} />
       </div>
     </nav>
   );

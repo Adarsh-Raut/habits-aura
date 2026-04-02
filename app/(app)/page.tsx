@@ -1,15 +1,19 @@
 import HabitList from "@/app/components/HabitList";
+import { unstable_noStore as noStore } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import type { Habit } from "@/app/types/habit";
-import { getTodayDateKey } from "@/lib/date";
+import { getTodayDateKey, getTodayWeekdayKey } from "@/lib/date";
 
 export default async function Page() {
+  noStore();
+
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) return null;
 
   const todayKey = getTodayDateKey();
+  const todayWeekdayKey = getTodayWeekdayKey();
 
   const dbHabits = await prisma.habit.findMany({
     where: { userId: session.user.id },
@@ -20,16 +24,15 @@ export default async function Page() {
       currentStreak: true,
       days: true,
       completions: {
-        select: { action: true, dateKey: true },
+        where: { dateKey: todayKey },
+        select: { action: true },
       },
     },
     orderBy: { createdAt: "asc" },
   });
 
   const habits: Habit[] = dbHabits.map((habit) => {
-    const todayCompletion = habit.completions.find(
-      (c) => c.dateKey === todayKey,
-    );
+    const todayCompletion = habit.completions[0];
 
     return {
       id: habit.id,
@@ -41,5 +44,5 @@ export default async function Page() {
     };
   });
 
-  return <HabitList initialHabits={habits} />;
+  return <HabitList initialHabits={habits} todayWeekdayKey={todayWeekdayKey} />;
 }

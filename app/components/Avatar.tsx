@@ -12,28 +12,42 @@ type AvatarProps = {
 const blurDataURL =
   "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
 
+function getInitials(name: string) {
+  const parts = name.trim().split(/\s+/).slice(0, 2);
+  return parts.map((part) => part[0]?.toUpperCase() ?? "").join("") || "?";
+}
+
 export default function Avatar({ src, name, size = 32 }: AvatarProps) {
   const [error, setError] = useState(false);
-
-  const fallback = `https://ui-avatars.com/api/?name=${encodeURIComponent(
-    name,
-  )}&background=1f2937&color=fff&size=${size * 2}`;
+  const showImage = Boolean(src) && !error;
+  const imageSrc = src ?? "";
 
   return (
     <div
       className="rounded-full overflow-hidden bg-base-300 flex items-center justify-center relative"
       style={{ width: size, height: size }}
     >
-      <Image
-        src={!src || error ? fallback : src}
-        alt={name}
-        referrerPolicy="no-referrer"
-        onError={() => setError(true)}
-        className="object-cover"
-        fill
-        placeholder="blur"
-        blurDataURL={blurDataURL}
-      />
+      {showImage ? (
+        <Image
+          src={imageSrc}
+          alt={name}
+          referrerPolicy="no-referrer"
+          onError={() => setError(true)}
+          className="object-cover"
+          fill
+          sizes={`${size}px`}
+          placeholder="blur"
+          blurDataURL={blurDataURL}
+        />
+      ) : (
+        <span
+          className="font-medium text-white/90"
+          style={{ fontSize: Math.max(12, Math.round(size * 0.38)) }}
+          aria-hidden="true"
+        >
+          {getInitials(name)}
+        </span>
+      )}
     </div>
   );
 }

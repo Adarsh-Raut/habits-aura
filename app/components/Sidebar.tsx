@@ -15,10 +15,6 @@ const menuItems = [
 export default function Sidebar() {
   const pathname = usePathname();
 
-  if (pathname === "/signin") {
-    return null;
-  }
-
   const closeDrawer = () => {
     const drawer = document.getElementById(
       "sidebar-drawer",

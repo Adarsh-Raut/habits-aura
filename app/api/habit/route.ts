@@ -3,51 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import { getTodayDateKey, getTodayWeekdayKey } from "@/lib/date";
 import { habitCreateLimiter } from "@/lib/ratelimit";
-
-export async function GET() {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.email) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const user = await prisma.user.findUnique({
-    where: { email: session.user.email },
-  });
-
-  if (!user) {
-    return NextResponse.json({ error: "User not found" }, { status: 404 });
-  }
-
-  const todayKey = getTodayDateKey();
-  const todayWeekday = getTodayWeekdayKey();
-
-  const habits = await prisma.habit.findMany({
-    where: {
-      userId: user.id,
-      days: { has: todayWeekday },
-    },
-    include: {
-      completions: {
-        select: { action: true, dateKey: true },
-      },
-    },
-    orderBy: { createdAt: "asc" },
-  });
-
-  const result = habits.map((habit) => {
-    const completion = habit.completions.find((c) => c.dateKey === todayKey);
-
-    return {
-      id: habit.id,
-      title: habit.title,
-      status: completion?.action ?? "NONE",
-    };
-  });
-
-  return NextResponse.json(result);
-}
 
 export async function POST(req: Request) {
   try {
@@ -77,7 +33,15 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { title, days } = body;
+    const title =
+      typeof body.title === "string" ? body.title.trim().slice(0, 120) : "";
+    const days: string[] = Array.isArray(body.days)
+      ? Array.from(
+          new Set(
+            body.days.filter((day: unknown): day is string => typeof day === "string"),
+          ),
+        )
+      : [];
 
     if (
       !title ||
@@ -97,7 +61,17 @@ export async function POST(req: Request) {
 
     revalidatePath("/");
 
-    return NextResponse.json(habit, { status: 201 });
+    return NextResponse.json(
+      {
+        id: habit.id,
+        title: habit.title,
+        createdAt: habit.createdAt,
+        status: "NONE",
+        streak: habit.currentStreak,
+        days: habit.days,
+      },
+      { status: 201 },
+    );
   } catch (error) {
     console.error("POST /api/habit error:", error);
     return NextResponse.json(

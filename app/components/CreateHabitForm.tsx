@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { FaArrowLeft } from "react-icons/fa6";
 import Link from "next/link";
-import { playCompleteSound } from "@/lib/audio";
+import { playCompleteSound, preloadCompleteSound } from "@/lib/audio";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { useHabitsStore } from "./HabitsStoreProvider";
+import type { Habit } from "@/app/types/habit";
 
 const DAY_MAP = {
   SUN: "S",
@@ -29,6 +31,9 @@ const HABIT_SUGGESTIONS = [
   "🇪🇸 Learn Spanish",
 ];
 
+const EMPTY_DAYS: string[] = [];
+const DEFAULT_DAYS = Object.keys(DAY_MAP);
+
 type CreateHabitFormProps = {
   habitId?: string;
   initialTitle?: string;
@@ -38,17 +43,32 @@ type CreateHabitFormProps = {
 export default function CreateHabitForm({
   habitId,
   initialTitle = "",
-  initialDays = [],
+  initialDays,
 }: CreateHabitFormProps) {
   const router = useRouter();
+  const { upsertHabit } = useHabitsStore();
   const submitButtonRef = useRef<HTMLButtonElement>(null);
   const isEditing = !!habitId;
+  const resolvedInitialDays = initialDays ?? EMPTY_DAYS;
+  const normalizedInitialDays = useMemo(
+    () =>
+      resolvedInitialDays.length > 0 ? [...resolvedInitialDays] : [...DEFAULT_DAYS],
+    [resolvedInitialDays],
+  );
 
   const [title, setTitle] = useState(initialTitle);
-  const [days, setDays] = useState<string[]>(
-    initialDays.length > 0 ? initialDays : Object.keys(DAY_MAP),
-  );
+  const [days, setDays] = useState<string[]>(normalizedInitialDays);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setTitle(initialTitle);
+    setDays(normalizedInitialDays);
+    setLoading(false);
+  }, [habitId, initialTitle, normalizedInitialDays]);
+
+  useEffect(() => {
+    preloadCompleteSound();
+  }, []);
 
   const toggleDay = (day: string) => {
     setDays((prev) =>
@@ -72,6 +92,14 @@ export default function CreateHabitForm({
 
         if (!res.ok) throw new Error();
 
+        const updatedHabit = ((await res.json()) as Habit & {
+          createdAt: string;
+        });
+        upsertHabit({
+          ...updatedHabit,
+          createdAt: new Date(updatedHabit.createdAt),
+        });
+
         toast.success("Habit updated!");
       } else {
         const res = await fetch("/api/habit", {
@@ -81,6 +109,14 @@ export default function CreateHabitForm({
         });
 
         if (!res.ok) throw new Error();
+
+        const createdHabit = ((await res.json()) as Habit & {
+          createdAt: string;
+        });
+        upsertHabit({
+          ...createdHabit,
+          createdAt: new Date(createdHabit.createdAt),
+        });
 
         playCompleteSound();
 
@@ -100,9 +136,10 @@ export default function CreateHabitForm({
       }
 
       router.replace("/");
-      router.refresh();
     } catch {
-      toast.error(isEditing ? "Failed to update habit" : "Failed to create habit");
+      toast.error(
+        isEditing ? "Failed to update habit" : "Failed to create habit",
+      );
       setLoading(false);
     }
   };

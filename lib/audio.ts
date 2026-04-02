@@ -1,10 +1,20 @@
 let audio: HTMLAudioElement | null = null;
 
-export function playCompleteSound() {
+function getAudio() {
   if (!audio) {
     audio = new Audio("/audio/completed-sound.mp3");
     audio.volume = 0.4;
+    audio.preload = "auto";
   }
-  audio.currentTime = 0;
-  audio.play().catch(() => {});
+  return audio;
+}
+
+export function preloadCompleteSound() {
+  getAudio().load();
+}
+
+export function playCompleteSound() {
+  const nextAudio = getAudio();
+  nextAudio.currentTime = 0;
+  nextAudio.play().catch(() => {});
 }

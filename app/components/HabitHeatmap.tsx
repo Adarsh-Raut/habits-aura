@@ -1,56 +1,76 @@
 "use client";
 
-import { memo } from "react";
+import { memo, useMemo } from "react";
 
 type Props = {
   calendar: Record<string, number>;
-  createdAt: string;
+  windowStart: string;
+  todayKey: string;
 };
 
-function getDateKey(date: Date) {
-  return (
-    date.getFullYear() +
-    "-" +
-    String(date.getMonth() + 1).padStart(2, "0") +
-    "-" +
-    String(date.getDate()).padStart(2, "0")
-  );
+function parseDateKey(dateKey: string) {
+  const [year, month, day] = dateKey.split("-").map(Number);
+  return new Date(Date.UTC(year, month - 1, day));
 }
 
-const HabitHeatmap = memo(function HabitHeatmap({ calendar, createdAt }: Props) {
-  const completedDays = new Set(Object.keys(calendar));
+function getDateKey(date: Date) {
+  return date.toISOString().split("T")[0];
+}
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+const monthFormatter = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  timeZone: "UTC",
+});
 
-  const startDate = new Date(createdAt);
-  startDate.setHours(0, 0, 0, 0);
+const fullDateFormatter = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+  timeZone: "UTC",
+});
 
-  startDate.setDate(startDate.getDate() - startDate.getDay());
+const HabitHeatmap = memo(function HabitHeatmap({
+  calendar,
+  windowStart,
+  todayKey,
+}: Props) {
+  const completedDays = useMemo(() => new Set(Object.keys(calendar)), [calendar]);
+  const weeks = useMemo(() => {
+    const today = parseDateKey(todayKey);
+    const startDate = new Date(windowStart);
+    startDate.setUTCHours(0, 0, 0, 0);
+    startDate.setUTCDate(startDate.getUTCDate() - startDate.getUTCDay());
 
-  const weeks: Date[][] = [];
-  let currentWeek: Date[] = [];
+    const nextWeeks: Date[][] = [];
+    let currentWeek: Date[] = [];
 
-  for (let d = new Date(startDate); d <= today; d.setDate(d.getDate() + 1)) {
-    currentWeek.push(new Date(d));
+    for (
+      let d = new Date(startDate);
+      d <= today;
+      d.setUTCDate(d.getUTCDate() + 1)
+    ) {
+      currentWeek.push(new Date(d));
 
-    if (currentWeek.length === 7) {
-      weeks.push(currentWeek);
-      currentWeek = [];
+      if (currentWeek.length === 7) {
+        nextWeeks.push(currentWeek);
+        currentWeek = [];
+      }
     }
-  }
 
-  if (currentWeek.length) weeks.push(currentWeek);
+    if (currentWeek.length) {
+      nextWeeks.push(currentWeek);
+    }
+
+    return nextWeeks;
+  }, [todayKey, windowStart]);
 
   return (
     <div className="space-y-2">
       <div className="flex gap-1 text-xs text-gray-400">
         {weeks.map((week, i) => {
-          const month = week[0].toLocaleString("default", { month: "short" });
+          const month = monthFormatter.format(week[0]);
           const prev =
-            i > 0
-              ? weeks[i - 1][0].toLocaleString("default", { month: "short" })
-              : null;
+            i > 0 ? monthFormatter.format(weeks[i - 1][0]) : null;
 
           return (
             <div key={i} className="w-4 text-center">
@@ -66,11 +86,7 @@ const HabitHeatmap = memo(function HabitHeatmap({ calendar, createdAt }: Props) 
             {week.map((date, di) => {
               const key = getDateKey(date);
               const isCompleted = completedDays.has(key);
-              const formattedDate = date.toLocaleDateString("en-US", {
-                month: "short",
-                day: "numeric",
-                year: "numeric",
-              });
+              const formattedDate = fullDateFormatter.format(date);
 
               return (
                 <div

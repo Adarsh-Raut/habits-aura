@@ -1,11 +1,90 @@
 import { NextResponse } from "next/server";
+import type { HabitAction } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { getTodayDate, getTodayDateKey, DAY_KEYS, isTodayHabitDay } from "@/lib/date";
+import {
+  getTodayDate,
+  getTodayDateKey,
+  DAY_KEYS,
+  isTodayHabitDay,
+} from "@/lib/date";
 import { AURA_DELTA } from "@/lib/aura";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { habitToggleLimiter, habitDeleteLimiter } from "@/lib/ratelimit";
+
+type TxClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
+
+function startOfDay(date: Date) {
+  const nextDate = new Date(date);
+  nextDate.setHours(0, 0, 0, 0);
+  return nextDate;
+}
+
+function dateKeyFromDate(date: Date) {
+  return startOfDay(date).toISOString().split("T")[0];
+}
+
+function parseDateKey(dateKey: string) {
+  const [year, month, day] = dateKey.split("-").map(Number);
+  return new Date(year, month - 1, day);
+}
+
+function getPreviousScheduledDate(
+  date: Date,
+  habitDaySet: Set<string>,
+  createdDate: Date,
+) {
+  const cursor = startOfDay(date);
+  cursor.setDate(cursor.getDate() - 1);
+
+  while (cursor >= createdDate) {
+    if (habitDaySet.has(DAY_KEYS[cursor.getDay()])) {
+      return new Date(cursor);
+    }
+
+    cursor.setDate(cursor.getDate() - 1);
+  }
+
+  return null;
+}
+
+function getLatestScheduledDateOnOrBefore(
+  date: Date,
+  habitDaySet: Set<string>,
+  createdDate: Date,
+) {
+  const cursor = startOfDay(date);
+
+  while (cursor >= createdDate) {
+    if (habitDaySet.has(DAY_KEYS[cursor.getDay()])) {
+      return new Date(cursor);
+    }
+
+    cursor.setDate(cursor.getDate() - 1);
+  }
+
+  return null;
+}
+
+function getNextScheduledDate(
+  date: Date,
+  habitDaySet: Set<string>,
+  today: Date,
+) {
+  const cursor = startOfDay(date);
+  cursor.setDate(cursor.getDate() + 1);
+
+  while (cursor <= today) {
+    if (habitDaySet.has(DAY_KEYS[cursor.getDay()])) {
+      return new Date(cursor);
+    }
+
+    cursor.setDate(cursor.getDate() + 1);
+  }
+
+  return null;
+}
 
 function calculateStreaks(
   completions: { dateKey: string }[],
@@ -16,62 +95,83 @@ function calculateStreaks(
     return { currentStreak: 0, longestStreak: 0 };
   }
 
-  const completionMap = new Set(completions.map((c) => c.dateKey));
+  const habitDaySet = new Set(habitDays);
+  const createdDate = startOfDay(habitCreatedAt);
+  const today = startOfDay(new Date());
+  const completedKeys = new Set<string>();
+  const completedDates: Date[] = [];
 
-  const createdDate = new Date(habitCreatedAt);
-  createdDate.setHours(0, 0, 0, 0);
-  const createdDateKey = createdDate.toISOString().split("T")[0];
+  for (const completion of completions) {
+    const completionDate = parseDateKey(completion.dateKey);
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+    if (
+      completionDate < createdDate ||
+      !habitDaySet.has(DAY_KEYS[completionDate.getDay()])
+    ) {
+      continue;
+    }
 
-  // Calculate current streak (from today going backwards)
+    completedKeys.add(completion.dateKey);
+    completedDates.push(completionDate);
+  }
+
+  if (completedDates.length === 0) {
+    return { currentStreak: 0, longestStreak: 0 };
+  }
+
   let currentStreak = 0;
+  let expectedCurrentDate = getLatestScheduledDateOnOrBefore(
+    today,
+    habitDaySet,
+    createdDate,
+  );
 
-  for (let i = 0; i < 1825; i++) {
-    const currentDate = new Date(today);
-    currentDate.setDate(currentDate.getDate() - i);
-    const dateKey = currentDate.toISOString().split("T")[0];
-
-    if (dateKey < createdDateKey) {
+  while (expectedCurrentDate) {
+    if (!completedKeys.has(dateKeyFromDate(expectedCurrentDate))) {
       break;
     }
 
-    const weekday = DAY_KEYS[currentDate.getDay()];
-
-    if (habitDays.includes(weekday)) {
-      if (completionMap.has(dateKey)) {
-        currentStreak++;
-      } else {
-        break;
-      }
-    }
+    currentStreak++;
+    expectedCurrentDate = getPreviousScheduledDate(
+      expectedCurrentDate,
+      habitDaySet,
+      createdDate,
+    );
   }
 
-  // Calculate longest streak (from creation date going forward)
   let longestStreak = 0;
-  let tempStreak = 0;
-  const maxDate = new Date(today);
+  let streak = 0;
+  let previousCompletionDate: Date | null = null;
 
-  for (let d = new Date(createdDate); d <= maxDate; d.setDate(d.getDate() + 1)) {
-    const dateKey = d.toISOString().split("T")[0];
-    const weekday = DAY_KEYS[d.getDay()];
-
-    if (habitDays.includes(weekday)) {
-      if (completionMap.has(dateKey)) {
-        tempStreak++;
-        longestStreak = Math.max(longestStreak, tempStreak);
-      } else {
-        tempStreak = 0;
-      }
+  for (const completionDate of completedDates) {
+    if (!previousCompletionDate) {
+      streak = 1;
+      longestStreak = 1;
+      previousCompletionDate = completionDate;
+      continue;
     }
+
+    const expectedNextDate = getNextScheduledDate(
+      previousCompletionDate,
+      habitDaySet,
+      today,
+    );
+
+    streak =
+      expectedNextDate &&
+      dateKeyFromDate(expectedNextDate) === dateKeyFromDate(completionDate)
+        ? streak + 1
+        : 1;
+
+    longestStreak = Math.max(longestStreak, streak);
+    previousCompletionDate = completionDate;
   }
 
   return { currentStreak, longestStreak };
 }
 
 async function updateHabitStreaks(
-  tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0],
+  tx: TxClient,
   habitId: string,
   habitDays: string[],
   habitCreatedAt: Date,
@@ -90,6 +190,77 @@ async function updateHabitStreaks(
   });
 
   return streaks;
+}
+
+async function persistHabitStreaks(
+  tx: TxClient,
+  habitId: string,
+  streaks: { currentStreak: number; longestStreak: number },
+) {
+  await tx.habit.update({
+    where: { id: habitId },
+    data: streaks,
+  });
+}
+
+async function getCompletedActionForDate(
+  tx: TxClient,
+  habitId: string,
+  dateKey: string,
+) {
+  const completion = await tx.habitCompletion.findUnique({
+    where: {
+      habitId_dateKey: {
+        habitId,
+        dateKey,
+      },
+    },
+    select: { action: true },
+  });
+
+  return completion?.action ?? null;
+}
+
+async function countCompletedScheduledStreakBackwards(
+  tx: TxClient,
+  habitId: string,
+  fromDate: Date | null,
+  habitDaySet: Set<string>,
+  createdDate: Date,
+) {
+  let streak = 0;
+  let cursor = fromDate ? startOfDay(fromDate) : null;
+
+  while (cursor) {
+    const action = await getCompletedActionForDate(
+      tx,
+      habitId,
+      dateKeyFromDate(cursor),
+    );
+
+    if (action !== "COMPLETED") {
+      break;
+    }
+
+    streak++;
+    cursor = getPreviousScheduledDate(cursor, habitDaySet, createdDate);
+  }
+
+  return streak;
+}
+
+async function applyAuraDelta(tx: TxClient, userId: string, delta: number) {
+  if (delta === 0) {
+    return;
+  }
+
+  await tx.user.update({
+    where: { id: userId },
+    data:
+      delta > 0
+        ? { auraPoints: { increment: delta } }
+        : { auraPoints: { decrement: Math.abs(delta) } },
+  });
 }
 
 /**
@@ -130,7 +301,14 @@ export async function PATCH(
 
   const habit = await prisma.habit.findUnique({
     where: { id: habitId },
-    select: { id: true, userId: true, days: true, createdAt: true },
+    select: {
+      id: true,
+      userId: true,
+      days: true,
+      createdAt: true,
+      currentStreak: true,
+      longestStreak: true,
+    },
   });
 
   if (!habit || habit.userId !== session.user.id) {
@@ -146,6 +324,8 @@ export async function PATCH(
 
   let currentStreak = 0;
   let longestStreak = 0;
+  const habitDaySet = new Set(habit.days);
+  const createdDate = startOfDay(habit.createdAt);
 
   await prisma.$transaction(async (tx) => {
     const existing = await tx.habitCompletion.findUnique({
@@ -168,14 +348,28 @@ export async function PATCH(
         },
       });
 
-      await tx.user.update({
-        where: { id: session.user.id },
-        data: { auraPoints: { increment: AURA_DELTA } },
-      });
+      await applyAuraDelta(tx, session.user.id, AURA_DELTA);
 
-      const streaks = await updateHabitStreaks(tx, habitId, habit.days, habit.createdAt);
-      currentStreak = streaks.currentStreak;
-      longestStreak = streaks.longestStreak;
+      const previousScheduledDate = getPreviousScheduledDate(
+        today,
+        habitDaySet,
+        createdDate,
+      );
+      const previousStreak = await countCompletedScheduledStreakBackwards(
+        tx,
+        habitId,
+        previousScheduledDate,
+        habitDaySet,
+        createdDate,
+      );
+
+      currentStreak = previousStreak + 1;
+      longestStreak = Math.max(habit.longestStreak, currentStreak);
+
+      await persistHabitStreaks(tx, habitId, {
+        currentStreak,
+        longestStreak,
+      });
 
       return;
     }
@@ -186,14 +380,26 @@ export async function PATCH(
         data: { action: "SKIPPED" },
       });
 
-      await tx.user.update({
-        where: { id: session.user.id },
-        data: { auraPoints: { decrement: AURA_DELTA } },
-      });
+      await applyAuraDelta(tx, session.user.id, -AURA_DELTA);
 
-      const streaks = await updateHabitStreaks(tx, habitId, habit.days, habit.createdAt);
-      currentStreak = streaks.currentStreak;
-      longestStreak = streaks.longestStreak;
+      currentStreak = 0;
+
+      if (habit.currentStreak < habit.longestStreak) {
+        longestStreak = habit.longestStreak;
+        await persistHabitStreaks(tx, habitId, {
+          currentStreak,
+          longestStreak,
+        });
+      } else {
+        const streaks = await updateHabitStreaks(
+          tx,
+          habitId,
+          habit.days,
+          habit.createdAt,
+        );
+        currentStreak = streaks.currentStreak;
+        longestStreak = streaks.longestStreak;
+      }
 
       return;
     }
@@ -202,14 +408,19 @@ export async function PATCH(
       where: { id: existing.id },
     });
 
-    const streaks = await updateHabitStreaks(tx, habitId, habit.days, habit.createdAt);
-    currentStreak = streaks.currentStreak;
-    longestStreak = streaks.longestStreak;
+    currentStreak = 0;
+    longestStreak = habit.longestStreak;
+
+    await persistHabitStreaks(tx, habitId, {
+      currentStreak,
+      longestStreak,
+    });
   });
 
   revalidatePath("/");
   revalidatePath("/leaderboard");
   revalidatePath("/stats");
+  revalidatePath(`/habit/${habitId}/edit`);
 
   return NextResponse.json({ 
     ok: true, 
@@ -250,11 +461,12 @@ export async function PUT(
   const newDays = days;
   const todayKey = getTodayDateKey();
   const todayWeekday = DAY_KEYS[new Date().getDay()];
+  const scheduleChanged =
+    newDays.length !== habit.days.length ||
+    newDays.some((day) => !habit.days.includes(day));
 
   const daysRemoved = habit.days.filter((d) => !newDays.includes(d));
   const todayWasRemoved = daysRemoved.includes(todayWeekday);
-
-  let deletedCompletionAction = null;
 
   await prisma.$transaction(async (tx) => {
     if (todayWasRemoved) {
@@ -268,16 +480,12 @@ export async function PUT(
       });
 
       if (existingCompletion) {
-        deletedCompletionAction = existingCompletion.action;
         await tx.habitCompletion.delete({
           where: { id: existingCompletion.id },
         });
 
         if (existingCompletion.action === "COMPLETED") {
-          await tx.user.update({
-            where: { id: session.user.id },
-            data: { auraPoints: { decrement: AURA_DELTA } },
-          });
+          await applyAuraDelta(tx, session.user.id, -AURA_DELTA);
         }
       }
     }
@@ -290,14 +498,43 @@ export async function PUT(
       },
     });
 
-    await updateHabitStreaks(tx, habitId, newDays, habit.createdAt);
+    if (scheduleChanged) {
+      await updateHabitStreaks(tx, habitId, newDays, habit.createdAt);
+    }
   });
 
   revalidatePath("/");
   revalidatePath("/leaderboard");
   revalidatePath("/stats");
+  revalidatePath(`/habit/${habitId}/edit`);
 
-  return NextResponse.json({ ok: true });
+  const updatedHabit = await prisma.habit.findUnique({
+    where: { id: habitId },
+    select: {
+      id: true,
+      title: true,
+      createdAt: true,
+      currentStreak: true,
+      days: true,
+      completions: {
+        where: { dateKey: todayKey },
+        select: { action: true },
+      },
+    },
+  });
+
+  if (!updatedHabit) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  return NextResponse.json({
+    id: updatedHabit.id,
+    title: updatedHabit.title,
+    createdAt: updatedHabit.createdAt,
+    status: updatedHabit.completions[0]?.action ?? "NONE",
+    streak: updatedHabit.currentStreak,
+    days: updatedHabit.days,
+  });
 }
 
 /* ---------------- DELETE HABIT ---------------- */
@@ -341,24 +578,19 @@ export async function DELETE(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  const completions = await prisma.habitCompletion.findMany({
-    where: { habitId: params.id },
-    select: { action: true },
-  });
-
-  const completedCount = completions.filter((c) => c.action === "COMPLETED").length;
-  const skippedCount = completions.filter((c) => c.action === "SKIPPED").length;
-  const refund = completedCount * AURA_DELTA + skippedCount * AURA_DELTA;
-
-  if (refund > 0) {
-    await prisma.user.update({
-      where: { id: session.user.id },
-      data: { auraPoints: { decrement: refund } },
+  await prisma.$transaction(async (tx) => {
+    const completedCount = await tx.habitCompletion.count({
+      where: {
+        habitId: params.id,
+        action: "COMPLETED" satisfies HabitAction,
+      },
     });
-  }
 
-  await prisma.habit.delete({
-    where: { id: params.id },
+    await applyAuraDelta(tx, session.user.id, -(completedCount * AURA_DELTA));
+
+    await tx.habit.delete({
+      where: { id: params.id },
+    });
   });
 
   revalidatePath("/");

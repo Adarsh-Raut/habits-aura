@@ -1,20 +1,14 @@
-"use client";
-
 import { GoGear } from "react-icons/go";
-import { MdLogout } from "react-icons/md";
-import { signOut, useSession } from "next-auth/react";
-import Image from "next/image";
+import type { Session } from "next-auth";
+import Avatar from "./Avatar";
+import LogoutButton from "./LogoutButton";
 
-export default function UserProfile() {
-  const { data: session, status } = useSession();
+type UserProfileProps = {
+  user?: Session["user"];
+};
 
-  if (status === "loading") {
-    return (
-      <div className="skeleton w-10 h-10 rounded-full" />
-    );
-  }
-
-  if (!session?.user) {
+export default function UserProfile({ user }: UserProfileProps) {
+  if (!user) {
     return null;
   }
 
@@ -24,21 +18,9 @@ export default function UserProfile() {
         tabIndex={0}
         className="btn btn-ghost gap-2 px-2 sm:px-3 normal-case"
       >
-        <div className="avatar">
-          <div className="w-8 rounded-full relative overflow-hidden">
-            <Image
-              src={session.user.image ?? ""}
-              alt={session.user.name ?? "User avatar"}
-              referrerPolicy="no-referrer"
-              fill
-              className="object-cover"
-            />
-          </div>
-        </div>
+        <Avatar src={user.image} name={user.name ?? "User"} size={32} />
 
-        <span className="hidden md:inline font-medium">
-          {session.user.name}
-        </span>
+        <span className="hidden md:inline font-medium">{user.name}</span>
 
         <GoGear className="h-4 w-4 sm:h-5 sm:w-5 opacity-70" />
       </label>
@@ -49,30 +31,15 @@ export default function UserProfile() {
       >
         <li className="pointer-events-none">
           <div className="flex flex-col gap-0.5 max-w-full">
-            <span className="font-semibold truncate">
-              {session.user.name}
-            </span>
-            <span className="text-xs opacity-60 truncate">
-              {session.user.email}
-            </span>
+            <span className="font-semibold truncate">{user.name}</span>
+            <span className="text-xs opacity-60 truncate">{user.email}</span>
           </div>
         </li>
 
         <li className="divider my-1" />
 
         <li>
-          <button
-            onClick={() =>
-              signOut({
-                callbackUrl: "/signin",
-              })
-            }
-            className="text-error flex items-center gap-2 w-full"
-            aria-label="Logout"
-          >
-            <MdLogout className="h-4 w-4 shrink-0" />
-            <span className="truncate">Logout</span>
-          </button>
+          <LogoutButton />
         </li>
       </ul>
     </div>

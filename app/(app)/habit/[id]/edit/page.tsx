@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { unstable_noStore as noStore } from "next/cache";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { notFound, redirect } from "next/navigation";
@@ -28,6 +29,8 @@ export default async function EditHabitPage({
 }: {
   params: { id: string };
 }) {
+  noStore();
+
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.id) {
@@ -50,6 +53,7 @@ export default async function EditHabitPage({
 
   return (
     <CreateHabitForm
+      key={habit.id}
       habitId={habit.id}
       initialTitle={habit.title}
       initialDays={habit.days}
