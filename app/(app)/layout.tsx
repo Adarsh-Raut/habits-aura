@@ -18,7 +18,7 @@ export default async function AppLayout({
 
   return (
     <HabitsStoreProvider>
-      <div className="drawer min-h-screen bg-[#1E2330] lg:drawer-open">
+      <div className="drawer min-h-screen bg-[#242933] lg:drawer-open">
         <input id="sidebar-drawer" type="checkbox" className="drawer-toggle" />
 
         <div className="drawer-content relative z-0 flex flex-col">
@@ -27,7 +27,10 @@ export default async function AppLayout({
         </div>
 
         <div className="drawer-side">
-          <label htmlFor="sidebar-drawer" className="drawer-overlay lg:hidden" />
+          <label
+            htmlFor="sidebar-drawer"
+            className="drawer-overlay lg:hidden"
+          />
           <Sidebar />
         </div>
       </div>

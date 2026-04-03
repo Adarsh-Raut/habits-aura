@@ -52,7 +52,9 @@ export default function CreateHabitForm({
   const resolvedInitialDays = initialDays ?? EMPTY_DAYS;
   const normalizedInitialDays = useMemo(
     () =>
-      resolvedInitialDays.length > 0 ? [...resolvedInitialDays] : [...DEFAULT_DAYS],
+      resolvedInitialDays.length > 0
+        ? [...resolvedInitialDays]
+        : [...DEFAULT_DAYS],
     [resolvedInitialDays],
   );
 
@@ -92,9 +94,9 @@ export default function CreateHabitForm({
 
         if (!res.ok) throw new Error();
 
-        const updatedHabit = ((await res.json()) as Habit & {
+        const updatedHabit = (await res.json()) as Habit & {
           createdAt: string;
-        });
+        };
         upsertHabit({
           ...updatedHabit,
           createdAt: new Date(updatedHabit.createdAt),
@@ -110,9 +112,9 @@ export default function CreateHabitForm({
 
         if (!res.ok) throw new Error();
 
-        const createdHabit = ((await res.json()) as Habit & {
+        const createdHabit = (await res.json()) as Habit & {
           createdAt: string;
-        });
+        };
         upsertHabit({
           ...createdHabit,
           createdAt: new Date(createdHabit.createdAt),
@@ -173,7 +175,7 @@ export default function CreateHabitForm({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Type your habit"
-              className="input input-bordered w-full"
+              className="input input-bordered input-color w-full"
             />
           </div>
 

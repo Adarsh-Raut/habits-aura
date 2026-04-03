@@ -24,7 +24,7 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className="w-64 h-full bg-[#1E2330] p-4 flex flex-col">
+    <aside className="w-64 h-full bg-[#242933] p-4 flex flex-col">
       <nav className="space-y-2">
         {menuItems.map((item) => (
           <Link

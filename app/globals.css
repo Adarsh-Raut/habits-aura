@@ -6,6 +6,15 @@
   color-scheme: dark;
 }
 
+.badge-base-200 {
+  background-color: #242933;
+  border-color: #242933;
+}
+
+.input-color {
+  background-color: #242933;
+}
+
 /* Custom spacious dark tooltip */
 .tooltip.custom-tooltip::before {
   padding: 8px 12px;

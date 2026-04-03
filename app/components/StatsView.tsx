@@ -101,7 +101,7 @@ export default function StatsView({ habits, todayKey }: Props) {
         <label className="block text-sm mb-2 opacity-60">Select Habit</label>
 
         <select
-          className="select select-bordered w-full"
+          className="bg-[#242933] select select-bordered w-full"
           value={selectedHabitId ?? ""}
           onChange={(e) => setSelectedHabitId(e.target.value)}
         >
@@ -119,7 +119,9 @@ export default function StatsView({ habits, todayKey }: Props) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <StatCard
               title="Current Streak"
-              value={selectedStats?.currentStreak ?? selectedHabit.currentStreak}
+              value={
+                selectedStats?.currentStreak ?? selectedHabit.currentStreak
+              }
               icon={<FaFireAlt className="text-orange-500" />}
               subtitle="Days in a row"
               success
@@ -127,7 +129,9 @@ export default function StatsView({ habits, todayKey }: Props) {
 
             <StatCard
               title="Longest Streak"
-              value={selectedStats?.longestStreak ?? selectedHabit.longestStreak}
+              value={
+                selectedStats?.longestStreak ?? selectedHabit.longestStreak
+              }
               icon={<FaTrophy className="text-warning" />}
               subtitle="Best consistency"
             />
