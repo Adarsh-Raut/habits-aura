@@ -18,6 +18,12 @@ type LeaderboardProps = {
   hasNextPage: boolean;
 };
 
+const rankMedals: Record<number, string> = {
+  1: "🥇",
+  2: "🥈",
+  3: "🥉",
+};
+
 function LeaderboardRow({
   player,
   isYou,
@@ -25,9 +31,11 @@ function LeaderboardRow({
   player: LeaderboardPlayer;
   isYou: boolean;
 }) {
+  const rankDisplay = rankMedals[player.rank] ?? player.rank;
+
   return (
     <tr className={isYou ? "bg-success/20 font-semibold" : ""}>
-      <td>{player.rank}</td>
+      <td className="text-lg">{rankDisplay}</td>
 
       <td>
         <div className="flex items-center gap-3 min-w-0">
@@ -60,10 +68,14 @@ const Leaderboard = ({
 
         <div className="flex items-center gap-2">
           <Link
-            href={hasPreviousPage ? `/leaderboard?page=${page - 1}` : "/leaderboard"}
+            href={
+              hasPreviousPage ? `/leaderboard?page=${page - 1}` : "/leaderboard"
+            }
             aria-disabled={!hasPreviousPage}
             className={`btn btn-sm gap-2 ${
-              hasPreviousPage ? "btn-ghost" : "btn-ghost pointer-events-none opacity-40"
+              hasPreviousPage
+                ? "btn-ghost"
+                : "btn-ghost pointer-events-none opacity-40"
             }`}
           >
             <IoChevronBack className="h-4 w-4" />
@@ -78,7 +90,9 @@ const Leaderboard = ({
             href={`/leaderboard?page=${page + 1}`}
             aria-disabled={!hasNextPage}
             className={`btn btn-sm gap-2 ${
-              hasNextPage ? "btn-ghost" : "btn-ghost pointer-events-none opacity-40"
+              hasNextPage
+                ? "btn-ghost"
+                : "btn-ghost pointer-events-none opacity-40"
             }`}
           >
             Next
