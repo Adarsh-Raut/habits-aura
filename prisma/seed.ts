@@ -14,12 +14,12 @@ const HABIT_TEMPLATES = [
 ];
 
 const SEED_USERS = [
-  { name: "Alex Johnson", email: "alex@example.com", image: "https://api.dicebear.com/7.x/avataaars/svg?seed=Alex", auraPoints: 250 },
-  { name: "Sam Williams", email: "sam@example.com", image: "https://api.dicebear.com/7.x/avataaars/svg?seed=Sam", auraPoints: 180 },
-  { name: "Jordan Lee", email: "jordan@example.com", image: "https://api.dicebear.com/7.x/avataaars/svg?seed=Jordan", auraPoints: 120 },
-  { name: "Casey Brown", email: "casey@example.com", image: "https://api.dicebear.com/7.x/avataaars/svg?seed=Casey", auraPoints: 220 },
-  { name: "Morgan Davis", email: "morgan@example.com", image: "https://api.dicebear.com/7.x/avataaars/svg?seed=Morgan", auraPoints: 160 },
-  { name: "Taylor Miller", email: "taylor@example.com", image: "https://api.dicebear.com/7.x/avataaars/svg?seed=Taylor", auraPoints: 95 },
+  { name: "Alex Johnson", email: "alex@example.com", image: "https://api.dicebear.com/7.x/avataaars/png?seed=Alex", auraPoints: 250 },
+  { name: "Sam Williams", email: "sam@example.com", image: "https://api.dicebear.com/7.x/avataaars/png?seed=Sam", auraPoints: 180 },
+  { name: "Jordan Lee", email: "jordan@example.com", image: "https://api.dicebear.com/7.x/avataaars/png?seed=Jordan", auraPoints: 120 },
+  { name: "Casey Brown", email: "casey@example.com", image: "https://api.dicebear.com/7.x/avataaars/png?seed=Casey", auraPoints: 220 },
+  { name: "Morgan Davis", email: "morgan@example.com", image: "https://api.dicebear.com/7.x/avataaars/png?seed=Morgan", auraPoints: 160 },
+  { name: "Taylor Miller", email: "taylor@example.com", image: "https://api.dicebear.com/7.x/avataaars/png?seed=Taylor", auraPoints: 95 },
 ];
 
 function randomInt(min: number, max: number): number {
@@ -69,7 +69,12 @@ async function seed() {
     });
 
     if (existingUser) {
-      console.log(`   - ${userData.email} already exists, skipping`);
+      // Update existing seed user's avatar to PNG format
+      const updatedUser = await prisma.user.update({
+        where: { email: userData.email },
+        data: { image: userData.image },
+      });
+      console.log(`   - ${userData.email} already exists, updated avatar to PNG`);
       continue;
     }
 

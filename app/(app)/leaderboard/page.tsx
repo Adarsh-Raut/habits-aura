@@ -38,9 +38,10 @@ export default async function Page({
 }) {
   const session = await getServerSession(authOptions);
   const requestedPage = Number(searchParams?.page ?? "1");
-  const page = Number.isFinite(requestedPage) && requestedPage > 0
-    ? Math.floor(requestedPage)
-    : 1;
+  const page =
+    Number.isFinite(requestedPage) && requestedPage > 0
+      ? Math.floor(requestedPage)
+      : 1;
   const skip = (page - 1) * LEADERBOARD_LIMIT;
 
   const [leaderboardRows, currentUser] = await Promise.all([
@@ -95,9 +96,8 @@ export default async function Page({
     };
   });
 
-  const totalUsers = leaderboardRows.length > 0
-    ? Number(leaderboardRows[0].totalCount)
-    : 0;
+  const totalUsers =
+    leaderboardRows.length > 0 ? Number(leaderboardRows[0].totalCount) : 0;
   const currentUserRank = currentUser[0] ?? null;
   const hasPreviousPage = page > 1;
   const hasNextPage = skip + leaderboardRows.length < totalUsers;
