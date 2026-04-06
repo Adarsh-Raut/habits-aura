@@ -22,13 +22,16 @@ const DAY_MAP = {
 const HABIT_SUGGESTIONS = [
   "💪 Workout",
   "📚 Read",
-  "🧘 Meditate",
+  "💰 Save Money",
   "🚶 Walk",
   "💧 Drink Water",
   "🚭 Stop smoking",
   "🚫 No alcohol",
-  "🇺🇸 Learn English",
-  "🇪🇸 Learn Spanish",
+  "🧠 Code",
+  "🏃 Run",
+  "🧘 Meditate",
+  "🥗 Eat Healthy",
+  "😴 Sleep Early",
 ];
 
 const EMPTY_DAYS: string[] = [];
@@ -226,7 +229,7 @@ export default function CreateHabitForm({
             ref={submitButtonRef}
             type="submit"
             disabled={loading}
-            className="btn bg-[#05C26A] text-white btn-block"
+            className="btn bg-[#05c269] hover:bg-[#05a45a] text-white btn-block rounded-full"
             aria-label={isEditing ? "Save Changes" : "Create Habit"}
           >
             {loading

@@ -121,11 +121,13 @@ export default function SignIn() {
         >
           <div className="flex items-center gap-2">
             <DiAtom className="h-8 w-8 text-[#d1d5db]" />
-            <span className="text-xl font-bold text-[#f3f4f6]">Habits Aura</span>
+            <span className="text-xl font-bold text-[#f3f4f6]">
+              Habits Aura
+            </span>
           </div>
           <button
             onClick={handleSignIn}
-            className="rounded-lg bg-[#22c55e] px-5 py-2.5 font-medium text-[#052e16] shadow-lg shadow-[#22c55e]/20 transition-all duration-300 hover:bg-[#4ade80] hover:shadow-[#22c55e]/30"
+            className="rounded-lg bg-[#05c269] px-5 py-2.5 font-medium text-white hover:bg-[#049456]"
             aria-label="Sign in with Google"
           >
             Sign in
@@ -170,7 +172,7 @@ export default function SignIn() {
                 whileTap={prefersReducedMotion ? undefined : { scale: 0.98 }}
                 disabled={loading}
                 onClick={handleSignIn}
-                className="mx-auto flex w-full max-w-md items-center justify-center gap-3 rounded-xl bg-[#22c55e] px-6 py-4 font-semibold text-[#052e16] shadow-lg shadow-[#22c55e]/20 transition-all duration-300 hover:bg-[#4ade80] hover:shadow-[#22c55e]/30 disabled:cursor-not-allowed disabled:opacity-60"
+                className="mx-auto flex w-full max-w-md items-center justify-center gap-3 rounded-xl bg-[#05c269] px-6 py-4 font-semibold text-white hover:bg-[#049456]  disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {loading ? (
                   <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#052e16]/30 border-t-[#052e16]" />
@@ -192,7 +194,10 @@ export default function SignIn() {
             {...animationProps}
             className="mx-auto mt-8 mb-16 w-full max-w-4xl"
           >
-            <m.h2 variants={itemVariants} className="mb-10 text-center text-2xl font-bold text-[#f3f4f6] md:text-3xl">
+            <m.h2
+              variants={itemVariants}
+              className="mb-10 text-center text-2xl font-bold text-[#f3f4f6] md:text-3xl"
+            >
               Everything you need
             </m.h2>
 
@@ -216,7 +221,9 @@ export default function SignIn() {
                   <h3 className="mb-2 text-lg font-semibold text-[#f3f4f6]">
                     {feature.title}
                   </h3>
-                  <p className="text-sm text-[#9aa4b2]">{feature.description}</p>
+                  <p className="text-sm text-[#9aa4b2]">
+                    {feature.description}
+                  </p>
                 </div>
               ))}
             </m.div>
@@ -227,7 +234,10 @@ export default function SignIn() {
             {...animationProps}
             className="mb-16 text-center"
           >
-            <m.h3 variants={itemVariants} className="mb-3 text-2xl font-bold text-[#f3f4f6]">
+            <m.h3
+              variants={itemVariants}
+              className="mb-3 text-2xl font-bold text-[#f3f4f6]"
+            >
               Ready to start?
             </m.h3>
             <m.p variants={itemVariants} className="mb-6 text-[#9aa4b2]">
@@ -238,7 +248,7 @@ export default function SignIn() {
               whileHover={prefersReducedMotion ? undefined : { scale: 1.02 }}
               whileTap={prefersReducedMotion ? undefined : { scale: 0.98 }}
               onClick={handleSignIn}
-              className="rounded-xl bg-[#22c55e] px-8 py-4 font-semibold text-[#052e16] shadow-lg shadow-[#22c55e]/20 transition-all duration-300 hover:bg-[#4ade80] hover:shadow-[#22c55e]/30"
+              className="rounded-xl bg-[#05c269] px-8 py-4 font-semibold text-white hover:bg-[#049456] "
             >
               Get Started Free
             </m.button>
