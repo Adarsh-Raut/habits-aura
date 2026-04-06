@@ -1,20 +1,27 @@
 let audio: HTMLAudioElement | null = null;
+let audioReady: Promise<void> | null = null;
 
-function getAudio() {
-  if (!audio) {
-    audio = new Audio("/audio/completed-sound.mp3");
-    audio.volume = 0.4;
-    audio.preload = "auto";
-  }
-  return audio;
+function preloadAudio() {
+  if (audio) return audioReady!;
+  
+  audio = new Audio("/audio/completed-sound.mp3");
+  audio.volume = 0.4;
+  
+  audioReady = new Promise((resolve) => {
+    audio!.addEventListener("canplaythrough", () => resolve(), { once: true });
+    audio!.load();
+  });
+  
+  return audioReady;
 }
 
 export function preloadCompleteSound() {
-  getAudio().load();
+  preloadAudio();
 }
 
-export function playCompleteSound() {
-  const nextAudio = getAudio();
-  nextAudio.currentTime = 0;
-  nextAudio.play().catch(() => {});
+export async function playCompleteSound() {
+  await preloadAudio();
+  if (!audio) return;
+  audio.currentTime = 0;
+  audio.play().catch(() => {});
 }
