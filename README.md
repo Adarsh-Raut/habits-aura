@@ -2,43 +2,49 @@
 
 > Build habits. Track consistency. Grow your aura.
 
-Habits Aura is a gamified habit-tracking web application built with **Next.js (App Router)**, **Prisma**, **PostgreSQL (Neon)**, and **NextAuth (Google OAuth)**.
-
-Users can:
-
-- Create habits
-- Track daily completion
-- Earn aura points
-- View streak statistics
-- Compete on a leaderboard
+Habits Aura is a gamified habit-tracking web application built with **Next.js 14 (App Router)**, **Prisma**, **PostgreSQL (Neon)**, and **NextAuth (Google OAuth)**.
 
 ---
 
 # ✨ Features
 
-- 🔐 Google Authentication (NextAuth)
-- 📅 Daily Habit Tracking
-- ⚡ Aura Points System
-- 🔥 Current & Longest Streak Tracking
-- 📊 GitHub-style Heatmap Calendar
-- 🏆 Leaderboard Ranking
-- 📱 Fully Responsive UI
-- 🌙 Forced Dark Theme (DaisyUI)
-- 🚀 Optimized Server Components
+- 🔐 Google Authentication (NextAuth v4)
+- 📅 Create habits with custom day schedules (SUN–SAT)
+- 🔄 3-state daily toggle: NONE → COMPLETED → SKIPPED → NONE
+- ⚡ Aura Points System (+10 on complete, –10 on skip)
+- 🔥 Current & Longest Streak Tracking (based on scheduled days)
+- 📊 GitHub-style Yearly Heatmap Calendar per habit
+- 🏆 Leaderboard Ranking (paginated, sorted by aura points)
+- ✨ Confetti animation on habit creation
+- 🔔 Sound effect on habit completion
+- ✏️ Edit habit title & schedule after creation
+- 🗑️ Delete habit (deducts earned aura points)
+- 🔄 Optimistic UI updates with automatic rollback on failure
+- 🚦 Rate limiting (Upstash) on toggle, create, and delete
+- 💡 Habit suggestions in create form
+- 👤 User profile dropdown with avatar
+- 📱 Fully responsive with mobile drawer navigation
+- 🌙 Forced dark theme (DaisyUI)
+- ⚡ Hybrid RSC/RCC for fast loads and interactivity
 
 ---
 
 # 🛠 Tech Stack
 
-| Layer      | Technology              |
-| ---------- | ----------------------- |
-| Framework  | Next.js 14 (App Router) |
-| Auth       | NextAuth (Google OAuth) |
-| Database   | PostgreSQL (Neon)       |
-| ORM        | Prisma                  |
-| Styling    | TailwindCSS + DaisyUI   |
-| Animation  | Framer Motion           |
-| Deployment | Vercel                  |
+| Layer         | Technology                          |
+| ------------- | ----------------------------------- |
+| Framework     | Next.js 14 (App Router)             |
+| Language      | TypeScript                          |
+| Auth          | NextAuth v4 (Google OAuth)          |
+| Database      | PostgreSQL (Neon)                   |
+| ORM           | Prisma                              |
+| Styling       | TailwindCSS + DaisyUI               |
+| Animation     | Framer Motion (LazyMotion)          |
+| Icons         | react-icons                         |
+| Notifications | sonner (toast notifications)        |
+| Confetti      | canvas-confetti                     |
+| Rate Limiting | @upstash/ratelimit + @upstash/redis |
+| Deployment    | Vercel                              |
 
 ---
 
@@ -73,6 +79,9 @@ NEXTAUTH_URL="http://localhost:3000"
 
 GOOGLE_CLIENT_ID="your-google-client-id"
 GOOGLE_CLIENT_SECRET="your-google-client-secret"
+
+UPSTASH_REDIS_REST_URL="your-upstash-redis-rest-url"
+UPSTASH_REDIS_REST_TOKEN="your-upstash-redis-rest-token"
 ```
 
 ---
@@ -89,6 +98,12 @@ Run migrations:
 
 ```bash
 npx prisma migrate dev
+```
+
+(Optional) Seed the database with sample data:
+
+```bash
+npm run seed
 ```
 
 (Optional) Open Prisma Studio:
@@ -141,50 +156,157 @@ https://your-domain.vercel.app
 
 ---
 
+# 🚦 Rate Limiting Setup
+
+Rate limiting uses **Upstash** (Redis-based sliding window).
+
+1. Go to https://upstash.com
+2. Create a Redis database (free tier)
+3. Copy the REST URL and REST Token
+4. Add them to your `.env` as `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`
+
+| Action | Limit |
+| ------ | ----- |
+| Habit toggle | 30 per minute |
+| Habit create | 10 per minute |
+| Habit delete | 10 per minute |
+
+---
+
 # 🧱 Project Structure
 
 ```
 app/
- ├── api/
- │    ├── auth/
- │    ├── habit/
- │    ├── leaderboard/
- │
- ├── components/
- │    ├── HabitCard.tsx
- │    ├── HabitList.tsx
- │    ├── StatsView.tsx
- │    ├── Leaderboard.tsx
- │
- ├── layout.tsx
- ├── page.tsx
+├── (app)/                          # Authenticated route group
+│   ├── layout.tsx                  # Auth guard + Navbar + Sidebar + Drawer
+│   ├── loading.tsx                 # Loading skeleton
+│   ├── error.tsx                   # Error boundary
+│   ├── page.tsx                    # Home page (habit list, server component)
+│   ├── create/
+│   │   └── page.tsx                # Create habit page
+│   ├── habit/
+│   │   └── [id]/
+│   │       └── edit/
+│   │           ├── page.tsx        # Edit habit page
+│   │           └── error.tsx
+│   ├── leaderboard/
+│   │   ├── page.tsx                # Leaderboard (paginated, raw SQL)
+│   │   ├── loading.tsx
+│   │   └── error.tsx
+│   ├── stats/
+│   │   ├── page.tsx                # Stats dashboard
+│   │   ├── loading.tsx
+│   │   └── error.tsx
+│   └── components/
+│       ├── AuthBackground.tsx      # Animated gradient for auth pages
+│       ├── Avatar.tsx              # User avatar with initials fallback
+│       ├── CreateHabitForm.tsx     # Create/Edit form with confetti
+│       ├── EmptyState.tsx          # Empty state for no habits
+│       ├── HabitCard.tsx           # Single habit card with 3-state toggle
+│       ├── HabitHeatmap.tsx        # GitHub-style yearly heatmap
+│       ├── HabitList.tsx           # Habits grid with context menu
+│       ├── HabitSkeleton.tsx       # Skeleton loader for habit cards
+│       ├── HabitsStoreProvider.tsx # Client store (optimistic + dirty tracking)
+│       ├── LeaderBoard.tsx         # Leaderboard table with medals
+│       ├── LogoutButton.tsx        # Sign out button
+│       ├── Navbar.tsx              # Top navigation bar
+│       ├── Portal.tsx              # React portal utility
+│       ├── Sidebar.tsx             # Side navigation drawer
+│       ├── StatsView.tsx           # Stats dashboard with streak cards
+│       └── UserProfile.tsx         # User dropdown (avatar, name, logout)
+│
+├── (auth)/                         # Unauthenticated route group
+│   ├── layout.tsx                  # Redirects authenticated users away
+│   └── signin/
+│       └── page.tsx                # Landing / sign-in page
+│
+├── api/
+│   ├── auth/
+│   │   └── [...nextauth]/
+│   │       └── route.ts            # NextAuth catch-all handler
+│   ├── habit/
+│   │   ├── route.ts                # POST /api/habit (create)
+│   │   └── [id]/
+│   │       ├── route.ts            # PATCH (toggle), PUT (edit), DELETE
+│   │       └── stats/
+│   │           └── route.ts        # GET /api/habit/[id]/stats (heatmap+streaks)
+│
+├── fonts/
+│   ├── GeistVF.woff
+│   └── GeistMonoVF.woff
+│
+├── types/
+│   └── habit.ts                    # Habit, HabitStatus, DbHabit types
+│
+├── globals.css                     # Tailwind + custom dark styles
+├── layout.tsx                      # Root layout (fonts, metadata, Toaster)
+├── sitemap.ts                      # Dynamic sitemap
+└── robots.ts                       # Robots.txt config
+
+lib/
+├── auth.ts                         # NextAuth config (Google OAuth, JWT, callbacks)
+├── prisma.ts                       # Prisma client singleton
+├── date.ts                         # Date utilities (day keys, today, next day)
+├── aura.ts                         # AURA_DELTA constant (= 10)
+├── ratelimit.ts                    # Upstash rate limiters
+└── audio.ts                        # Audio preload / play for completion sound
+
+prisma/
+├── schema.prisma                   # Database schema (User, Habit, HabitCompletion)
+├── seed.ts                         # Seed script (6 users + habits + completions)
+└── migrations/                     # SQL migrations
+
+public/
+└── audio/
+    └── completed-sound.mp3         # Completion sound effect
 ```
 
 ---
 
-# 🧠 Architecture Overview
+# 🧠 Architecture
 
-## Habit Completion Flow
+## Habit Toggle Flow (3-State Cycle)
 
-1. User clicks habit
-2. PATCH `/api/habit/[id]`
-3. Server:
-   - Updates `habitCompletion`
-   - Updates user `auraPoints`
-   - Revalidates:
-     - `/`
-     - `/leaderboard`
-     - `/stats`
-4. UI updates optimistically
+```
+NONE ──click──▶ COMPLETED (+10 aura, +1 streak)
+COMPLETED ──click──▶ SKIPPED (-10 aura, streak resets)
+SKIPPED ──click──▶ NONE (no aura change, streak stays 0)
+```
 
----
+1. User clicks the toggle on a **HabitCard**
+2. `HabitList.toggleHabit()` fires — updates store optimistically, plays sound
+3. `PATCH /api/habit/[id]` is called
+4. Server runs a **Prisma transaction**:
+   - Checks for existing `HabitCompletion` on today's `dateKey`
+   - Creates/updates/deletes the completion row
+   - Adjusts aura points via `applyAuraDelta()`
+   - Recalculates streaks based on consecutive completions on scheduled days
+   - Calls `revalidatePath()` for `/`, `/leaderboard`, `/stats`, `/habit/[id]/edit`
+5. On success: updates streak from response, calls `router.refresh()`
+6. On failure: restores previous state via `restoreHabit()`, shows error toast
+
+## Optimistic Updates
+
+The `HabitsStoreProvider` maintains a local state of all habits. On any toggle:
+- The UI updates **immediately** (optimistic)
+- The change is tracked in a "dirty habits" map
+- On server response: reconcile with fresh data
+- On error: **rollback** to the previous state
 
 ## Aura System
 
-- Completing habit → +AURA_DELTA
-- Skipping → penalty
-- Leaderboard sorted by `auraPoints`
-- Streaks computed from `habitCompletion`
+- Every new user starts with **100 aura points**
+- **+10** for each habit completion
+- **–10** for skipping a completed habit
+- Deleting a habit deducts all aura earned from its completions
+- Leaderboard is sorted by `auraPoints` descending
+
+## Streak Calculation
+
+- Streaks are based on **scheduled habit days only** (not calendar days)
+- `currentStreak`: consecutive completions ending with the latest scheduled day
+- `longestStreak`: highest streak ever achieved
+- Skipping a completion resets `currentStreak` to 0
 
 ---
 
@@ -194,10 +316,8 @@ app/
 
 1. Push project to GitHub
 2. Import into Vercel
-3. Add Environment Variables
+3. Add Environment Variables (same as `.env`)
 4. Deploy
-
----
 
 ## Setup Neon Database
 
@@ -210,32 +330,41 @@ app/
 
 # ⚡ Performance Optimizations
 
-- Server Components for habit rendering
-- Optimistic UI updates
-- Prisma transactions
-- Path revalidation instead of full reload
+- Server Components for habit rendering (RSC)
+- Optimistic UI updates with dirty tracking & rollback
+- Prisma transactions for atomic operations
+- Path revalidation instead of full page reload
 - Dark theme locked to prevent hydration issues
+- LazyMotion for reduced bundle size (Framer Motion)
 
 ---
 
 # 🧪 Useful Commands
 
-Generate Prisma client:
-
 ```bash
+# Generate Prisma client
 npx prisma generate
-```
 
-Reset database:
+# Run migrations
+npx prisma migrate dev
 
-```bash
+# Reset database (drops all data)
 npx prisma migrate reset
-```
 
-Build project:
+# Seed database with sample data
+npm run seed
 
-```bash
+# Open Prisma Studio
+npx prisma studio
+
+# Lint
+npm run lint
+
+# Build
 npm run build
+
+# Development
+npm run dev
 ```
 
 ---
