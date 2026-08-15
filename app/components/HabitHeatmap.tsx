@@ -1,6 +1,9 @@
 "use client";
 
 import { memo, useMemo } from "react";
+import { ActivityCalendar } from "react-activity-calendar";
+import type { Activity } from "react-activity-calendar";
+import "react-activity-calendar/tooltips.css";
 
 type Props = {
   calendar: Record<string, number>;
@@ -17,11 +20,6 @@ function getDateKey(date: Date) {
   return date.toISOString().split("T")[0];
 }
 
-const monthFormatter = new Intl.DateTimeFormat("en-US", {
-  month: "short",
-  timeZone: "UTC",
-});
-
 const fullDateFormatter = new Intl.DateTimeFormat("en-US", {
   month: "short",
   day: "numeric",
@@ -29,83 +27,65 @@ const fullDateFormatter = new Intl.DateTimeFormat("en-US", {
   timeZone: "UTC",
 });
 
+const GITHUB_DARK_THEME = [
+  "#161b22",
+  "#0e4429",
+  "#006d32",
+  "#26a641",
+  "#39d353",
+];
+
 const HabitHeatmap = memo(function HabitHeatmap({
   calendar,
   windowStart,
   todayKey,
 }: Props) {
-  const completedDays = useMemo(() => new Set(Object.keys(calendar)), [calendar]);
-  const weeks = useMemo(() => {
-    const today = parseDateKey(todayKey);
-    const startDate = new Date(windowStart);
-    startDate.setUTCHours(0, 0, 0, 0);
-    startDate.setUTCDate(startDate.getUTCDate() - startDate.getUTCDay());
+  const data = useMemo(() => {
+    const start = new Date(windowStart);
+    start.setUTCHours(0, 0, 0, 0);
+    start.setUTCDate(start.getUTCDate() - start.getUTCDay());
 
-    const nextWeeks: Date[][] = [];
-    let currentWeek: Date[] = [];
+    const byDate = new Map<string, Activity>();
+    byDate.set(getDateKey(start), { date: getDateKey(start), count: 0, level: 0 });
+    byDate.set(todayKey, { date: todayKey, count: 0, level: 0 });
 
-    for (
-      let d = new Date(startDate);
-      d <= today;
-      d.setUTCDate(d.getUTCDate() + 1)
-    ) {
-      currentWeek.push(new Date(d));
+    Object.keys(calendar)
+      .sort()
+      .forEach((date) => {
+        byDate.set(date, { date, count: 1, level: 4 });
+      });
 
-      if (currentWeek.length === 7) {
-        nextWeeks.push(currentWeek);
-        currentWeek = [];
-      }
-    }
-
-    if (currentWeek.length) {
-      nextWeeks.push(currentWeek);
-    }
-
-    return nextWeeks;
-  }, [todayKey, windowStart]);
+    return Array.from(byDate.values()).sort((a, b) =>
+      a.date < b.date ? -1 : 1,
+    );
+  }, [calendar, windowStart, todayKey]);
 
   return (
-    <div className="space-y-2">
-      <div className="flex gap-1 text-xs text-gray-400">
-        {weeks.map((week, i) => {
-          const month = monthFormatter.format(week[0]);
-          const prev =
-            i > 0 ? monthFormatter.format(weeks[i - 1][0]) : null;
-
-          return (
-            <div key={i} className="w-4 text-center">
-              {month !== prev ? month : ""}
-            </div>
-          );
-        })}
-      </div>
-
-      <div className="flex gap-1">
-        {weeks.map((week, wi) => (
-          <div key={wi} className="flex flex-col gap-1">
-            {week.map((date, di) => {
-              const key = getDateKey(date);
-              const isCompleted = completedDays.has(key);
-              const formattedDate = fullDateFormatter.format(date);
-
-              return (
-                <div
-                  key={di}
-                  className="tooltip tooltip-top custom-tooltip"
-                  data-tip={formattedDate}
-                >
-                  <div
-                    className={`w-4 h-4 rounded-sm ${
-                      isCompleted ? "bg-green-500" : "bg-gray-700"
-                    }`}
-                  />
-                </div>
-              );
-            })}
-          </div>
-        ))}
-      </div>
-    </div>
+    <ActivityCalendar
+      data={data}
+      theme={{ dark: GITHUB_DARK_THEME }}
+      colorScheme="dark"
+      weekStart={0}
+      showWeekdayLabels={["mon", "wed", "fri"]}
+      blockSize={12}
+      blockMargin={3}
+      blockRadius={2}
+      fontSize={12}
+      showColorLegend={false}
+      labels={{
+        totalCount: "{{count}} days completed",
+      }}
+      tooltips={{
+        activity: {
+          text: (activity) => {
+            const label = fullDateFormatter.format(parseDateKey(activity.date));
+            return activity.count > 0
+              ? `Completed on ${label}`
+              : `No activity on ${label}`;
+          },
+        },
+      }}
+    />
   );
 });
 
