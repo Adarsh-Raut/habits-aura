@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { getTodayDateKey } from "@/lib/date";
 import { calculateStreaks } from "@/lib/streaks";
+import { buildHabitStats } from "@/lib/stats";
 
 export default async function Page() {
   const session = await getServerSession(authOptions);
@@ -42,5 +43,7 @@ export default async function Page() {
     };
   });
 
-  return <StatsView habits={habitSummaries} todayKey={todayKey} />;
+  const initialStats = habits.length > 0 ? buildHabitStats(habits[0]) : null;
+
+  return <StatsView habits={habitSummaries} todayKey={todayKey} initialStats={initialStats} />;
 }

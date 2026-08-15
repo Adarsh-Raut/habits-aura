@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { IoPencil, IoTrashBin } from "react-icons/io5";
 import { toast } from "sonner";
@@ -193,43 +193,56 @@ export default function HabitList({
     },
   });
 
-  function openMenu(habit: Habit, trigger: HTMLButtonElement) {
-    const rect = trigger.getBoundingClientRect();
-    const menuWidth = 200;
-    const menuHeight = 120;
-    const padding = 8;
+  const openMenu = useCallback(function openMenu(
+  habit: Habit,
+  trigger: HTMLButtonElement,
+) {
+  const rect = trigger.getBoundingClientRect();
+  const menuWidth = 200;
+  const menuHeight = 120;
+  const padding = 8;
 
-    let left = (rect.left + rect.right) / 2 - menuWidth / 2;
+  let left = (rect.left + rect.right) / 2 - menuWidth / 2;
 
-    if (left < padding) {
-      left = padding;
-    }
-
-    if (left + menuWidth > window.innerWidth - padding) {
-      left = window.innerWidth - menuWidth - padding;
-    }
-
-    let top = rect.bottom + padding;
-    if (top + menuHeight > window.innerHeight) {
-      top = rect.top - menuHeight - padding;
-    }
-
-    setMenuState({ habitId: habit.id, top, left });
+  if (left < padding) {
+    left = padding;
   }
+
+  if (left + menuWidth > window.innerWidth - padding) {
+    left = window.innerWidth - menuWidth - padding;
+  }
+
+  let top = rect.bottom + padding;
+  if (top + menuHeight > window.innerHeight) {
+    top = rect.top - menuHeight - padding;
+  }
+
+  setMenuState({ habitId: habit.id, top, left });
+}, []);
 
   function openEditHabit(habit: Habit) {
     setMenuState(null);
     router.push(`/habit/${habit.id}/edit?refresh=${Date.now()}`);
   }
 
-  function toggleHabit(habit: Habit) {
-    toggleMutation.mutate(habit);
-  }
+  const toggleHabitRef = useRef<(habit: Habit) => void>(() => {});
+  toggleHabitRef.current = (habit) => toggleMutation.mutate(habit);
 
-  function deleteHabit(habit: Habit) {
+  const toggleHabit = useCallback(
+    (habit: Habit) => toggleHabitRef.current(habit),
+    [],
+  );
+
+  const deleteHabitRef = useRef<(habit: Habit) => void>(() => {});
+  deleteHabitRef.current = (habit) => {
     setMenuState(null);
     deleteMutation.mutate(habit.id);
-  }
+  };
+
+  const deleteHabit = useCallback(
+    (habit: Habit) => deleteHabitRef.current(habit),
+    [],
+  );
 
   const activeHabit =
     menuState ? displayedHabits.find((habit) => habit.id === menuState.habitId) ?? null : null;

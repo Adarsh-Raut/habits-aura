@@ -12,12 +12,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { habitToggleLimiter, habitDeleteLimiter } from "@/lib/ratelimit";
-import {
-  calculateStreaks,
-  dateKeyFromDate,
-  getPreviousScheduledDate,
-  startOfDay,
-} from "@/lib/streaks";
+import { calculateStreaks } from "@/lib/streaks";
 
 type TxClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
 
@@ -52,52 +47,6 @@ async function persistHabitStreaks(
     where: { id: habitId },
     data: streaks,
   });
-}
-
-async function getCompletedActionForDate(
-  tx: TxClient,
-  habitId: string,
-  dateKey: string,
-) {
-  const completion = await tx.habitCompletion.findUnique({
-    where: {
-      habitId_dateKey: {
-        habitId,
-        dateKey,
-      },
-    },
-    select: { action: true },
-  });
-
-  return completion?.action ?? null;
-}
-
-async function countCompletedScheduledStreakBackwards(
-  tx: TxClient,
-  habitId: string,
-  fromDate: Date | null,
-  habitDaySet: Set<string>,
-  createdDate: Date,
-) {
-  let streak = 0;
-  let cursor = fromDate ? startOfDay(fromDate) : null;
-
-  while (cursor) {
-    const action = await getCompletedActionForDate(
-      tx,
-      habitId,
-      dateKeyFromDate(cursor),
-    );
-
-    if (action !== "COMPLETED") {
-      break;
-    }
-
-    streak++;
-    cursor = getPreviousScheduledDate(cursor, habitDaySet, createdDate);
-  }
-
-  return streak;
 }
 
 async function applyAuraDelta(tx: TxClient, userId: string, delta: number) {
@@ -175,8 +124,6 @@ export async function PATCH(
 
   let currentStreak = 0;
   let longestStreak = 0;
-  const habitDaySet = new Set(habit.days);
-  const createdDate = startOfDay(habit.createdAt);
 
   await prisma.$transaction(async (tx) => {
     const existing = await tx.habitCompletion.findUnique({
@@ -201,26 +148,14 @@ export async function PATCH(
 
       await applyAuraDelta(tx, session.user.id, AURA_DELTA);
 
-      const previousScheduledDate = getPreviousScheduledDate(
-        today,
-        habitDaySet,
-        createdDate,
-      );
-      const previousStreak = await countCompletedScheduledStreakBackwards(
+      const streaks = await updateHabitStreaks(
         tx,
         habitId,
-        previousScheduledDate,
-        habitDaySet,
-        createdDate,
+        habit.days,
+        habit.createdAt,
       );
-
-      currentStreak = previousStreak + 1;
-      longestStreak = Math.max(habit.longestStreak, currentStreak);
-
-      await persistHabitStreaks(tx, habitId, {
-        currentStreak,
-        longestStreak,
-      });
+      currentStreak = streaks.currentStreak;
+      longestStreak = streaks.longestStreak;
 
       return;
     }

@@ -14,7 +14,11 @@ type HabitSummary = {
   longestStreak: number;
 };
 
-type HabitStats = HabitSummary & {
+type HabitStats = {
+  habitId: string;
+  title: string;
+  currentStreak: number;
+  longestStreak: number;
   windowStart: string;
   calendar: Record<string, number>;
 };
@@ -22,9 +26,10 @@ type HabitStats = HabitSummary & {
 type Props = {
   habits: HabitSummary[];
   todayKey: string;
+  initialStats?: HabitStats | null;
 };
 
-export default function StatsView({ habits, todayKey }: Props) {
+export default function StatsView({ habits, todayKey, initialStats }: Props) {
   const [selectedHabitId, setSelectedHabitId] = useState(habits[0]?.id ?? null);
 
   const selectedHabit = useMemo(
@@ -50,6 +55,10 @@ export default function StatsView({ habits, todayKey }: Props) {
       return (await res.json()) as HabitStats;
     },
     enabled: !!selectedHabitId,
+    initialData:
+      initialStats && initialStats.habitId === selectedHabitId
+        ? initialStats
+        : undefined,
   });
 
   useEffect(() => {
