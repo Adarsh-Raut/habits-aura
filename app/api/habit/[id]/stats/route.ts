@@ -2,14 +2,9 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { calculateStreaks, startOfDay } from "@/lib/streaks";
 
 const HEATMAP_DAYS = 365;
-
-function startOfDay(date: Date) {
-  const nextDate = new Date(date);
-  nextDate.setHours(0, 0, 0, 0);
-  return nextDate;
-}
 
 function dateKeyFromDate(date: Date) {
   return startOfDay(date).toISOString().split("T")[0];
@@ -35,17 +30,12 @@ export async function GET(
       id: true,
       title: true,
       createdAt: true,
-      currentStreak: true,
-      longestStreak: true,
+      days: true,
       userId: true,
       completions: {
-        where: {
-          action: "COMPLETED",
-          dateKey: {
-            gte: oneYearAgoKey,
-          },
-        },
+        where: { action: "COMPLETED" },
         select: { dateKey: true },
+        orderBy: { dateKey: "asc" },
       },
     },
   });
@@ -54,11 +44,20 @@ export async function GET(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
+  const streaks = calculateStreaks(
+    habit.completions,
+    habit.days,
+    habit.createdAt,
+    { graceToday: true },
+  );
+
   const calendar: Record<string, number> = {};
 
-  habit.completions.forEach((entry) => {
-    calendar[entry.dateKey] = 1;
-  });
+  for (const entry of habit.completions) {
+    if (entry.dateKey >= oneYearAgoKey) {
+      calendar[entry.dateKey] = 1;
+    }
+  }
 
   return NextResponse.json({
     habitId: habit.id,
@@ -66,8 +65,8 @@ export async function GET(
     windowStart: startOfDay(
       habit.createdAt > oneYearAgo ? habit.createdAt : oneYearAgo,
     ).toISOString(),
-    currentStreak: habit.currentStreak,
-    longestStreak: habit.longestStreak,
+    currentStreak: streaks.currentStreak,
+    longestStreak: streaks.longestStreak,
     calendar,
   });
 }

@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState, startTransition } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { IoPencil, IoTrashBin } from "react-icons/io5";
 import { toast } from "sonner";
 import HabitCard from "./HabitCard";
 import EmptyState from "./EmptyState";
 import type { Habit } from "@/app/types/habit";
-import { useHabitsStore } from "./HabitsStoreProvider";
 import { playCompleteSound, preloadCompleteSound } from "@/lib/audio";
 import Portal from "./Portal";
 import { useRouter } from "next/navigation";
@@ -21,6 +21,8 @@ type MenuState = {
   top: number;
   left: number;
 } | null;
+
+const HABITS_QUERY_KEY = ["habits"] as const;
 
 const nextStatusMap: Record<"NONE" | "COMPLETED" | "SKIPPED", "NONE" | "COMPLETED" | "SKIPPED"> = {
   NONE: "COMPLETED",
@@ -48,25 +50,35 @@ function getOptimisticStreak(
   return currentStreak;
 }
 
+async function fetchHabits(): Promise<Habit[]> {
+  const res = await fetch("/api/habits", { cache: "no-store" });
+
+  if (!res.ok) throw new Error("Failed to load habits");
+
+  const data = (await res.json()) as {
+    habits: (Omit<Habit, "createdAt"> & { createdAt: string })[];
+  };
+
+  return data.habits.map((habit) => ({
+    ...habit,
+    createdAt: new Date(habit.createdAt),
+  }));
+}
+
 export default function HabitList({
   initialHabits,
   todayWeekdayKey,
 }: HabitListProps) {
   const router = useRouter();
-  const {
-    habits,
-    hasHydrated,
-    hydrateHabits,
-    updateHabit,
-    removeHabit,
-    restoreHabit,
-  } = useHabitsStore();
+  const queryClient = useQueryClient();
   const [menuState, setMenuState] = useState<MenuState>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    hydrateHabits(initialHabits, todayWeekdayKey);
-  }, [hydrateHabits, initialHabits, todayWeekdayKey]);
+  const { data: habits } = useQuery({
+    queryKey: HABITS_QUERY_KEY,
+    queryFn: fetchHabits,
+    initialData: initialHabits,
+  });
 
   useEffect(() => {
     preloadCompleteSound();
@@ -101,7 +113,85 @@ export default function HabitList({
     };
   }, [menuState]);
 
-  const displayedHabits = hasHydrated ? habits : initialHabits;
+  const displayedHabits = habits ?? initialHabits;
+
+  const toggleMutation = useMutation({
+    mutationFn: async (habit: Habit) => {
+      const res = await fetch(`/api/habit/${habit.id}`, { method: "PATCH" });
+
+      if (!res.ok) throw new Error("Failed to update");
+
+      const data = (await res.json()) as { currentStreak: number };
+      return data;
+    },
+    onMutate: async (habit: Habit) => {
+      await queryClient.cancelQueries({ queryKey: HABITS_QUERY_KEY });
+
+      const previousHabits = queryClient.getQueryData<Habit[]>(HABITS_QUERY_KEY);
+
+      const previousStatus = habit.status;
+      const newStatus = nextStatusMap[habit.status];
+      const optimisticStreak = getOptimisticStreak(
+        previousStatus,
+        habit.streak,
+        newStatus,
+      );
+
+      if (previousStatus !== "COMPLETED" && newStatus === "COMPLETED") {
+        playCompleteSound();
+      }
+
+      queryClient.setQueryData<Habit[]>(HABITS_QUERY_KEY, (current) =>
+        (current ?? []).map((item) =>
+          item.id === habit.id
+            ? { ...item, status: newStatus, streak: optimisticStreak }
+            : item,
+        ),
+      );
+
+      return { previousHabits };
+    },
+    onError: (_error, _habit, context) => {
+      if (context?.previousHabits) {
+        queryClient.setQueryData(HABITS_QUERY_KEY, context.previousHabits);
+      }
+      toast.error("Failed to update habit. Please try again.");
+    },
+    onSettled: (_data, _error, habit) => {
+      queryClient.invalidateQueries({ queryKey: HABITS_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ["habitStats", habit.id] });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (habitId: string) => {
+      const res = await fetch(`/api/habit/${habitId}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete");
+    },
+    onMutate: async (habitId: string) => {
+      await queryClient.cancelQueries({ queryKey: HABITS_QUERY_KEY });
+
+      const previousHabits = queryClient.getQueryData<Habit[]>(HABITS_QUERY_KEY);
+
+      queryClient.setQueryData<Habit[]>(HABITS_QUERY_KEY, (current) =>
+        (current ?? []).filter((item) => item.id !== habitId),
+      );
+
+      return { previousHabits };
+    },
+    onError: (_error, _habitId, context) => {
+      if (context?.previousHabits) {
+        queryClient.setQueryData(HABITS_QUERY_KEY, context.previousHabits);
+      }
+      toast.error("Failed to delete habit. Please try again.");
+    },
+    onSuccess: () => {
+      toast.success("Habit deleted");
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: HABITS_QUERY_KEY });
+    },
+  });
 
   function openMenu(habit: Habit, trigger: HTMLButtonElement) {
     const rect = trigger.getBoundingClientRect();
@@ -132,67 +222,13 @@ export default function HabitList({
     router.push(`/habit/${habit.id}/edit?refresh=${Date.now()}`);
   }
 
-  async function toggleHabit(habit: Habit) {
-    const previousStatus = habit.status;
-    const previousStreak = habit.streak;
-    const newStatus = nextStatusMap[habit.status];
-    const optimisticStreak = getOptimisticStreak(
-      previousStatus,
-      previousStreak,
-      newStatus,
-    );
-
-    if (previousStatus !== "COMPLETED" && newStatus === "COMPLETED") {
-      playCompleteSound();
-    }
-
-    updateHabit(habit.id, (currentHabit) => ({
-      ...currentHabit,
-      status: newStatus,
-      streak: optimisticStreak,
-    }));
-
-    try {
-      const res = await fetch(`/api/habit/${habit.id}`, { method: "PATCH" });
-
-      if (!res.ok) throw new Error("Failed to update");
-
-      const data = await res.json();
-
-      updateHabit(habit.id, (currentHabit) => ({
-        ...currentHabit,
-        streak: data.currentStreak,
-      }));
-
-      startTransition(() => {
-        router.refresh();
-      });
-    } catch {
-      restoreHabit({
-        ...habit,
-        status: previousStatus,
-        streak: previousStreak,
-      });
-      toast.error("Failed to update habit. Please try again.");
-    }
+  function toggleHabit(habit: Habit) {
+    toggleMutation.mutate(habit);
   }
 
-  async function deleteHabit(habit: Habit) {
-    removeHabit(habit.id);
+  function deleteHabit(habit: Habit) {
     setMenuState(null);
-
-    try {
-      const res = await fetch(`/api/habit/${habit.id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error();
-      toast.success("Habit deleted");
-
-      startTransition(() => {
-        router.refresh();
-      });
-    } catch {
-      restoreHabit(habit);
-      toast.error("Failed to delete habit. Please try again.");
-    }
+    deleteMutation.mutate(habit.id);
   }
 
   const activeHabit =

@@ -3,7 +3,8 @@
 import HabitHeatmap from "./HabitHeatmap";
 import EmptyState from "./EmptyState";
 import { FaFireAlt, FaTrophy } from "react-icons/fa";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 type HabitSummary = {
@@ -25,9 +26,6 @@ type Props = {
 
 export default function StatsView({ habits, todayKey }: Props) {
   const [selectedHabitId, setSelectedHabitId] = useState(habits[0]?.id ?? null);
-  const [selectedStats, setSelectedStats] = useState<HabitStats | null>(null);
-  const [isLoadingStats, setIsLoadingStats] = useState(false);
-  const statsCacheRef = useRef<Record<string, HabitStats>>({});
 
   const selectedHabit = useMemo(
     () => habits.find((h) => h.id === selectedHabitId) ?? null,
@@ -40,55 +38,28 @@ export default function StatsView({ habits, todayKey }: Props) {
     }
   }, [habits, selectedHabitId]);
 
+  const statsQuery = useQuery({
+    queryKey: ["habitStats", selectedHabitId],
+    queryFn: async () => {
+      const res = await fetch(`/api/habit/${selectedHabitId}/stats`, {
+        cache: "no-store",
+      });
+
+      if (!res.ok) throw new Error("Failed to load stats");
+
+      return (await res.json()) as HabitStats;
+    },
+    enabled: !!selectedHabitId,
+  });
+
   useEffect(() => {
-    if (!selectedHabitId) {
-      setSelectedStats(null);
-      return;
+    if (statsQuery.isError) {
+      toast.error("Failed to load habit stats.");
     }
+  }, [statsQuery.isError]);
 
-    const cachedStats = statsCacheRef.current[selectedHabitId];
-    if (cachedStats) {
-      setSelectedStats(cachedStats);
-      setIsLoadingStats(false);
-      return;
-    }
-
-    const controller = new AbortController();
-
-    async function loadStats() {
-      setIsLoadingStats(true);
-
-      try {
-        const res = await fetch(`/api/habit/${selectedHabitId}/stats`, {
-          signal: controller.signal,
-          cache: "no-store",
-        });
-
-        if (!res.ok) {
-          throw new Error("Failed to load stats");
-        }
-
-        const data = (await res.json()) as HabitStats;
-        statsCacheRef.current[selectedHabitId] = data;
-        setSelectedStats(data);
-      } catch {
-        if (controller.signal.aborted) {
-          return;
-        }
-
-        setSelectedStats(null);
-        toast.error("Failed to load habit stats.");
-      } finally {
-        if (!controller.signal.aborted) {
-          setIsLoadingStats(false);
-        }
-      }
-    }
-
-    loadStats();
-
-    return () => controller.abort();
-  }, [selectedHabitId]);
+  const selectedStats = statsQuery.data ?? null;
+  const isLoadingStats = statsQuery.isPending;
 
   if (habits.length === 0) {
     return <EmptyState />;

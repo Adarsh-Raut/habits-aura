@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { getTodayDateKey } from "@/lib/date";
+import { calculateStreaks } from "@/lib/streaks";
 
 export default async function Page() {
   const session = await getServerSession(authOptions);
@@ -14,18 +15,32 @@ export default async function Page() {
     select: {
       id: true,
       title: true,
-      currentStreak: true,
-      longestStreak: true,
+      createdAt: true,
+      days: true,
+      completions: {
+        where: { action: "COMPLETED" },
+        select: { dateKey: true },
+        orderBy: { dateKey: "asc" },
+      },
     },
     orderBy: { createdAt: "asc" },
   });
 
-  const habitSummaries = habits.map((habit) => ({
-    id: habit.id,
-    title: habit.title,
-    currentStreak: habit.currentStreak,
-    longestStreak: habit.longestStreak,
-  }));
+  const habitSummaries = habits.map((habit) => {
+    const streaks = calculateStreaks(
+      habit.completions,
+      habit.days,
+      habit.createdAt,
+      { graceToday: true },
+    );
+
+    return {
+      id: habit.id,
+      title: habit.title,
+      currentStreak: streaks.currentStreak,
+      longestStreak: streaks.longestStreak,
+    };
+  });
 
   return <StatsView habits={habitSummaries} todayKey={todayKey} />;
 }
