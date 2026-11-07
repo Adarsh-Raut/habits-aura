@@ -389,3 +389,7 @@ Full Stack Developer (MERN + Next.js + Prisma)
 # 📄 License
 
 MIT License
+
+---
+
+Built by [Adarsh Raut](https://adarshraut.vercel.app)
