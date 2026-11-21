@@ -6,21 +6,31 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["var(--font-geist-sans)", "ui-sans-serif", "system-ui", "sans-serif"],
-        mono: ["var(--font-geist-mono)", "ui-monospace", "monospace"],
+        sans: [
+          "var(--font-figtree)",
+          "ui-sans-serif",
+          "system-ui",
+          "sans-serif",
+        ],
+        mono: [
+          "var(--font-geist-mono)",
+          "ui-monospace",
+          "monospace",
+        ],
       },
       colors: {
-        // Landing palette: emerald = done, amber = aura/streak, red = skipped.
-        ink: {
-          950: "#0a0e14",
-          900: "#0f141b",
-          800: "#151b24",
-          700: "#1c2430",
-          600: "#27313f",
+        // Brand palette: paper + ink, with one signal colour.
+        paper: "#f5f5f2",
+        ink: { DEFAULT: "#0b0b0c", soft: "#1a1a1c", line: "#2a2a2d" },
+        signal: {
+          DEFAULT: "#ff4d1a", // fills, big numerals, buttons
+          hover: "#ff6a3a",
+          text: "#b5290a", // small text on light backgrounds (AA)
         },
-        mist: { 100: "#e8ecf2", 300: "#aab4c3", 500: "#7b8798" },
-        done: "#22c55e",
-        gold: "#ffbf46",
+        ember: "#ffb199",
+        ash: "#d9d9d4",
+        graphite: "#4a4a4f", // body text on paper
+        fog: "#9a9aa0", // muted text on ink
       },
     },
   },
@@ -29,8 +39,29 @@ const config: Config = {
     themes: [
       {
         habits: {
-          ...themes.dark,
-          neutral: "#2a303c",
+          ...themes.light,
+          primary: "#ff4d1a",
+          "primary-content": "#0b0b0c",
+          secondary: "#0b0b0c",
+          "secondary-content": "#f5f5f2",
+          accent: "#ffb199",
+          "accent-content": "#0b0b0c",
+          neutral: "#0b0b0c",
+          "neutral-content": "#f5f5f2",
+          "base-100": "#f5f5f2",
+          "base-200": "#ededE9",
+          "base-300": "#d9d9d4",
+          "base-content": "#0b0b0c",
+          info: "#0b0b0c",
+          success: "#16a34a",
+          "success-content": "#ffffff",
+          warning: "#f59e0b",
+          error: "#d92d20",
+          "error-content": "#ffffff",
+          "--rounded-box": "1rem",
+          "--rounded-btn": "0.75rem",
+          "--rounded-badge": "999px",
+          "--btn-focus-scale": "0.98",
         },
       },
     ],

@@ -1,12 +1,13 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
+import { Figtree } from "next/font/google";
 import { Toaster } from "sonner";
 import "./globals.css";
 
-const geistSans = localFont({
-  src: "./fonts/GeistVF.woff",
-  variable: "--font-geist-sans",
-  weight: "100 900",
+const figtree = Figtree({
+  subsets: ["latin"],
+  variable: "--font-figtree",
+  display: "swap",
 });
 
 const geistMono = localFont({
@@ -14,6 +15,10 @@ const geistMono = localFont({
   variable: "--font-geist-mono",
   weight: "100 900",
 });
+
+export const viewport: Viewport = {
+  themeColor: "#f5f5f2",
+};
 
 export const metadata: Metadata = {
   title: {
@@ -61,19 +66,20 @@ export default function RootLayout({
     <html
       lang="en"
       data-theme="habits"
-      className={`${geistSans.variable} ${geistMono.variable}`}
+      className={`${figtree.variable} ${geistMono.variable}`}
     >
       <body className="antialiased">
         <Toaster
           position="bottom-center"
           richColors
           closeButton
-          theme="dark"
+          theme="light"
           toastOptions={{
             style: {
-              background: "#262626",
-              border: "1px solid #404040",
-              color: "#e5e5e5",
+              background: "#ffffff",
+              border: "1px solid #d9d9d4",
+              color: "#0b0b0c",
+              fontWeight: 600,
             },
           }}
         />
