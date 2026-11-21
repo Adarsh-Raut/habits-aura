@@ -1,0 +1,15 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: habits-aura-db
+    environment:
+      POSTGRES_USER: habits
+      POSTGRES_PASSWORD: habits
+      POSTGRES_DB: habits_aura
+    ports:
+      - "5440:5432"
+    volumes:
+      - habits_aura_pg:/var/lib/postgresql/data
+
+volumes:
+  habits_aura_pg:
