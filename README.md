@@ -11,7 +11,7 @@ Habits Aura is a gamified habit-tracking web application built with **Next.js 14
 - 🔐 Google Authentication (NextAuth v4)
 - 📅 Create habits with custom day schedules (SUN–SAT)
 - 🔄 3-state daily toggle: NONE → COMPLETED → SKIPPED → NONE
-- ⚡ Aura Points System (+10 on complete, –10 on skip)
+- ⚡ Aura Points System (+10 on complete, –10 on skip; undoing a state reverses it)
 - 🔥 Current & Longest Streak Tracking (based on scheduled days)
 - 📊 GitHub-style Yearly Heatmap Calendar per habit
 - 🏆 Leaderboard Ranking (paginated, sorted by aura points)
@@ -389,3 +389,22 @@ Full Stack Developer (MERN + Next.js + Prisma)
 # 📄 License
 
 MIT License
+
+
+---
+
+# 🧪 Local development
+
+```bash
+docker compose up -d                      # Postgres on :5440
+cp .env.example .env.local                # then fill in values
+DATABASE_URL=postgresql://habits:habits@localhost:5440/habits_aura npx prisma migrate deploy
+npm run seed                              # optional demo data
+npm run dev
+npm test                                  # unit tests
+node tests/e2e/api.e2e.mjs                # API tests (needs dev server + local DB)
+npx playwright install chromium && node tests/e2e/browser.e2e.mjs   # browser tests (needs DEV_LOGIN=1)
+```
+
+Days are tracked in the user's own timezone (a `tz` cookie set by the browser).
+Streaks are computed from completions, not stored.
