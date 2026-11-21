@@ -405,6 +405,7 @@ npm test                                  # unit tests
 node tests/e2e/api.e2e.mjs                # API tests (needs dev server + local DB)
 npx playwright install chromium && node tests/e2e/browser.e2e.mjs   # browser tests (needs DEV_LOGIN=1)
 node tests/e2e/responsive.e2e.mjs         # every screen at 375/768/1280px + axe accessibility
+node tests/e2e/audio.e2e.mjs              # creating habits plays the full sound every time
 node tests/e2e/landing.e2e.mjs            # landing page tests
 ```
 

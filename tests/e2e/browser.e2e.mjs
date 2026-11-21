@@ -40,9 +40,13 @@ async function run(tz) {
   page.on("pageerror", (e) => errors.push(String(e)));
   page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
   await page.addInitScript(() => {
+    // The completion sound uses Web Audio: count every buffer source that starts.
     window.__plays = 0;
-    const orig = HTMLMediaElement.prototype.play;
-    HTMLMediaElement.prototype.play = function () { window.__plays++; return Promise.resolve(); };
+    const start = AudioBufferSourceNode.prototype.start;
+    AudioBufferSourceNode.prototype.start = function (...args) {
+      window.__plays++;
+      return start.apply(this, args);
+    };
   });
 
   // login (dev-only credentials provider)
@@ -60,6 +64,20 @@ async function run(tz) {
   await page.waitForTimeout(800);
   check("empty state shown for new user", (await page.locator("text=/no habits|create|first habit/i").count()) > 0);
   await page.screenshot({ path: `${SHOTS}/${tz.replace("/", "_")}-1-empty.png` });
+
+  // account menu: toggles on every click, closes on outside click and Escape
+  const menuBtn = page.getByRole("button", { name: "Account menu" });
+  await menuBtn.click();
+  check("menu opens on click", await page.locator("#user-menu").isVisible());
+  await menuBtn.click();
+  check("menu closes on a second click", !(await page.locator("#user-menu").isVisible()));
+  await menuBtn.click();
+  await page.mouse.click(700, 500);
+  check("menu closes on outside click", !(await page.locator("#user-menu").isVisible()));
+  await menuBtn.click();
+  await page.keyboard.press("Escape");
+  check("menu closes on Escape and focus returns to the button", !(await page.locator("#user-menu").isVisible()) && (await menuBtn.evaluate((el) => document.activeElement === el)));
+  check("menu button exposes aria-expanded", (await menuBtn.getAttribute("aria-expanded")) === "false");
 
   // create via UI
   await page.goto(BASE + "/create");
