@@ -15,7 +15,6 @@ model User {
   image         String?
   auraPoints    Int       @default(100)
   accounts      Account[]
-  sessions      Session[]
   habits        Habit[]
 
   @@index([auraPoints])
@@ -40,29 +39,10 @@ model Account {
   @@map("accounts")
 }
 
-model Session {
-  id           String   @id @default(cuid())
-  sessionToken String   @unique
-  userId       String
-  expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("sessions")
-}
-
-model VerificationToken {
-  id         String   @id @default(cuid())
-  identifier String
-  token      String   @unique
-  expires    DateTime
-
-  @@map("verification_tokens")
-}
-
 model Habit {
   id            String            @id @default(cuid())
   title         String
-  days          String[]
+  days          Weekday[]
   userId        String
   user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt     DateTime          @default(now())
@@ -70,6 +50,16 @@ model Habit {
 
   @@map("habits")
   @@index([userId])
+}
+
+enum Weekday {
+  SUN
+  MON
+  TUE
+  WED
+  THU
+  FRI
+  SAT
 }
 
 enum HabitAction {
@@ -80,7 +70,6 @@ enum HabitAction {
 model HabitCompletion {
   id      String      @id @default(cuid())
   habitId String
-  date    DateTime
   dateKey String
   action  HabitAction
   habit   Habit       @relation(fields: [habitId], references: [id], onDelete: Cascade)

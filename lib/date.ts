@@ -6,7 +6,16 @@
  * the server's local time zone or DST.
  */
 
-export const DAY_KEYS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+export type DayKey = "SUN" | "MON" | "TUE" | "WED" | "THU" | "FRI" | "SAT";
+export const DAY_KEYS: DayKey[] = [
+  "SUN",
+  "MON",
+  "TUE",
+  "WED",
+  "THU",
+  "FRI",
+  "SAT",
+];
 export const TZ_COOKIE = "tz";
 export const DEFAULT_TIME_ZONE = "UTC";
 
@@ -49,7 +58,7 @@ export function addDaysToKey(dateKey: string, days: number): string {
   return date.toISOString().slice(0, 10);
 }
 
-export function weekdayKeyOfDateKey(dateKey: string): string {
+export function weekdayKeyOfDateKey(dateKey: string): DayKey {
   return DAY_KEYS[dateKeyToDate(dateKey).getUTCDay()];
 }
 
@@ -66,7 +75,7 @@ export function isTodayHabitDay(
 }
 
 export function getDayIndex(dayKey: string) {
-  return DAY_KEYS.indexOf(dayKey);
+  return DAY_KEYS.indexOf(dayKey as DayKey);
 }
 
 export function getNextHabitDayFromWeekday(

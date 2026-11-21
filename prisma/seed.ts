@@ -3,16 +3,17 @@ import { PrismaClient } from "@prisma/client";
 import {
   addDaysToKey,
   dateKeyToDate,
+  type DayKey,
   getTodayDateKey,
   resolveTimeZone,
   weekdayKeyOfDateKey,
 } from "../lib/date";
-import { auraForCounts } from "../lib/aura";
+import { auraForCounts, STARTING_AURA } from "../lib/aura";
 
 const prisma = new PrismaClient();
 const TIME_ZONE = resolveTimeZone(process.env.SEED_TIME_ZONE);
 
-const HABIT_TEMPLATES = [
+const HABIT_TEMPLATES: { title: string; days: DayKey[]; completionRate: number }[] = [
   { title: "Morning Workout", days: ["MON", "TUE", "WED", "THU", "FRI"], completionRate: 0.8 },
   { title: "Read 30 mins", days: ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"], completionRate: 0.9 },
   { title: "Meditate", days: ["SAT", "SUN"], completionRate: 0.5 },
@@ -22,12 +23,12 @@ const HABIT_TEMPLATES = [
 ];
 
 const SEED_USERS = [
-  { name: "Alex Johnson", email: "alex@example.com", image: "https://api.dicebear.com/7.x/avataaars/png?seed=Alex", auraPoints: 250 },
-  { name: "Sam Williams", email: "sam@example.com", image: "https://api.dicebear.com/7.x/avataaars/png?seed=Sam", auraPoints: 180 },
-  { name: "Jordan Lee", email: "jordan@example.com", image: "https://api.dicebear.com/7.x/avataaars/png?seed=Jordan", auraPoints: 120 },
-  { name: "Casey Brown", email: "casey@example.com", image: "https://api.dicebear.com/7.x/avataaars/png?seed=Casey", auraPoints: 220 },
-  { name: "Morgan Davis", email: "morgan@example.com", image: "https://api.dicebear.com/7.x/avataaars/png?seed=Morgan", auraPoints: 160 },
-  { name: "Taylor Miller", email: "taylor@example.com", image: "https://api.dicebear.com/7.x/avataaars/png?seed=Taylor", auraPoints: 95 },
+  { name: "Alex Johnson", email: "alex@example.com", image: "https://api.dicebear.com/7.x/avataaars/png?seed=Alex" },
+  { name: "Sam Williams", email: "sam@example.com", image: "https://api.dicebear.com/7.x/avataaars/png?seed=Sam" },
+  { name: "Jordan Lee", email: "jordan@example.com", image: "https://api.dicebear.com/7.x/avataaars/png?seed=Jordan" },
+  { name: "Casey Brown", email: "casey@example.com", image: "https://api.dicebear.com/7.x/avataaars/png?seed=Casey" },
+  { name: "Morgan Davis", email: "morgan@example.com", image: "https://api.dicebear.com/7.x/avataaars/png?seed=Morgan" },
+  { name: "Taylor Miller", email: "taylor@example.com", image: "https://api.dicebear.com/7.x/avataaars/png?seed=Taylor" },
 ];
 
 function randomInt(min: number, max: number): number {
@@ -84,7 +85,7 @@ async function seed() {
         name: userData.name,
         email: userData.email,
         image: userData.image,
-        auraPoints: userData.auraPoints,
+        auraPoints: STARTING_AURA,
       },
     });
     createdUsers.push(user);
@@ -131,7 +132,6 @@ async function seed() {
             await prisma.habitCompletion.create({
               data: {
                 habitId: habit.id,
-                date: dateKeyToDate(dateKey),
                 dateKey,
                 action,
               },

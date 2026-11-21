@@ -1,8 +1,8 @@
-import { DAY_KEYS } from "@/lib/date";
+import { DAY_KEYS, type DayKey } from "@/lib/date";
 
 export const MAX_TITLE_LENGTH = 120;
 
-export type HabitInput = { title: string; days: string[] };
+export type HabitInput = { title: string; days: DayKey[] };
 
 /** Validates a create/update habit body. Returns an error message on failure. */
 export function parseHabitInput(
@@ -30,7 +30,7 @@ export function parseHabitInput(
     return { ok: false, error: "Pick at least one day" };
   }
 
-  if (!days.every((d) => typeof d === "string" && DAY_KEYS.includes(d))) {
+  if (!days.every((d) => DAY_KEYS.includes(d as DayKey))) {
     return { ok: false, error: "Invalid days" };
   }
 
