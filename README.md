@@ -404,6 +404,7 @@ npm run dev
 npm test                                  # unit tests
 node tests/e2e/api.e2e.mjs                # API tests (needs dev server + local DB)
 npx playwright install chromium && node tests/e2e/browser.e2e.mjs   # browser tests (needs DEV_LOGIN=1)
+node tests/e2e/landing.e2e.mjs            # landing page tests
 ```
 
 Days are tracked in the user's own timezone (a `tz` cookie set by the browser).

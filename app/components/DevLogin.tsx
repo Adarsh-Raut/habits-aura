@@ -15,8 +15,8 @@ export default function DevLogin() {
   if (process.env.NEXT_PUBLIC_DEV_LOGIN !== "1") return null;
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 flex items-center gap-2 rounded-xl border border-dashed border-yellow-500/60 bg-black/70 p-3 text-sm text-gray-200">
-      <label htmlFor="dev-login-user" className="text-yellow-400">
+    <div className="fixed bottom-2 right-2 z-50 flex max-w-[calc(100vw-1rem)] items-center gap-2 rounded-xl border border-dashed border-yellow-500/60 bg-black/70 p-3 text-sm text-gray-200">
+      <label htmlFor="dev-login-user" className="sr-only text-yellow-400 sm:not-sr-only">
         Dev login
       </label>
       <select
