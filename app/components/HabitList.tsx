@@ -113,11 +113,9 @@ export default function HabitList({
     };
   }, [menuState]);
 
-  const displayedHabits = habits ?? initialHabits;
-
   const toggleMutation = useMutation({
     mutationFn: async (habit: Habit) => {
-      const res = await fetch(`/api/habit/${habit.id}`, { method: "PATCH" });
+      const res = await fetch(`/api/habits/${habit.id}`, { method: "PATCH" });
 
       if (!res.ok) throw new Error("Failed to update");
 
@@ -165,7 +163,7 @@ export default function HabitList({
 
   const deleteMutation = useMutation({
     mutationFn: async (habitId: string) => {
-      const res = await fetch(`/api/habit/${habitId}`, { method: "DELETE" });
+      const res = await fetch(`/api/habits/${habitId}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Failed to delete");
     },
     onMutate: async (habitId: string) => {
@@ -220,41 +218,31 @@ export default function HabitList({
   setMenuState({ habitId: habit.id, top, left });
 }, []);
 
-  function openEditHabit(habit: Habit) {
+  const { mutate: toggleHabit } = toggleMutation;
+
+  const { mutate: removeHabit } = deleteMutation;
+
+  function deleteHabit(habit: Habit) {
     setMenuState(null);
-    router.push(`/habit/${habit.id}/edit?refresh=${Date.now()}`);
+    removeHabit(habit.id);
   }
 
-  const toggleHabitRef = useRef<(habit: Habit) => void>(() => {});
-  toggleHabitRef.current = (habit) => toggleMutation.mutate(habit);
-
-  const toggleHabit = useCallback(
-    (habit: Habit) => toggleHabitRef.current(habit),
-    [],
-  );
-
-  const deleteHabitRef = useRef<(habit: Habit) => void>(() => {});
-  deleteHabitRef.current = (habit) => {
+  function openEditHabit(habit: Habit) {
     setMenuState(null);
-    deleteMutation.mutate(habit.id);
-  };
-
-  const deleteHabit = useCallback(
-    (habit: Habit) => deleteHabitRef.current(habit),
-    [],
-  );
+    router.push(`/habit/${habit.id}/edit`);
+  }
 
   const activeHabit =
-    menuState ? displayedHabits.find((habit) => habit.id === menuState.habitId) ?? null : null;
+    menuState ? habits.find((habit) => habit.id === menuState.habitId) ?? null : null;
 
-  if (displayedHabits.length === 0) {
+  if (habits.length === 0) {
     return <EmptyState />;
   }
 
   return (
     <>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {displayedHabits.map((habit) => (
+        {habits.map((habit) => (
           <HabitCard
             key={habit.id}
             habit={habit}

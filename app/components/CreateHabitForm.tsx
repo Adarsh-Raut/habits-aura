@@ -83,7 +83,7 @@ export default function CreateHabitForm({
 
   const createMutation = useMutation({
     mutationFn: async (payload: { title: string; days: string[] }) => {
-      const res = await fetch("/api/habit", {
+      const res = await fetch("/api/habits", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -124,7 +124,7 @@ export default function CreateHabitForm({
 
   const updateMutation = useMutation({
     mutationFn: async (payload: { title: string; days: string[] }) => {
-      const res = await fetch(`/api/habit/${habitId}`, {
+      const res = await fetch(`/api/habits/${habitId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

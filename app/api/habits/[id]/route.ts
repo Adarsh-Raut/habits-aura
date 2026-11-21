@@ -5,7 +5,6 @@ import { revalidatePath } from "next/cache";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
-  dateKeyToDate,
   getTodayDateKey,
   getTodayWeekdayKey,
   isTodayHabitDay,
@@ -113,7 +112,6 @@ export async function PATCH(
       await tx.habitCompletion.create({
         data: {
           habitId,
-          date: dateKeyToDate(todayKey),
           dateKey: todayKey,
           action: to,
         },

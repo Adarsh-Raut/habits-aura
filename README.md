@@ -224,19 +224,19 @@ app/
 │   ├── auth/
 │   │   └── [...nextauth]/
 │   │       └── route.ts            # NextAuth catch-all handler
-│   ├── habit/
-│   │   ├── route.ts                # POST /api/habit (create)
+│   ├── habits/
+│   │   ├── route.ts                # GET /api/habits (list), POST (create)
 │   │   └── [id]/
 │   │       ├── route.ts            # PATCH (toggle), PUT (edit), DELETE
 │   │       └── stats/
-│   │           └── route.ts        # GET /api/habit/[id]/stats (heatmap+streaks)
+│   │           └── route.ts        # GET /api/habits/[id]/stats (heatmap+streaks)
 │
 ├── fonts/
 │   ├── GeistVF.woff
 │   └── GeistMonoVF.woff
 │
 ├── types/
-│   └── habit.ts                    # Habit, HabitStatus, DbHabit types
+│   └── habit.ts                    # Habit, HabitStatus types
 │
 ├── globals.css                     # Tailwind + custom dark styles
 ├── layout.tsx                      # Root layout (fonts, metadata, Toaster)
@@ -275,7 +275,7 @@ SKIPPED ──click──▶ NONE (no aura change, streak stays 0)
 
 1. User clicks the toggle on a **HabitCard**
 2. `HabitList.toggleHabit()` fires — updates store optimistically, plays sound
-3. `PATCH /api/habit/[id]` is called
+3. `PATCH /api/habits/[id]` is called
 4. Server runs a **Prisma transaction**:
    - Checks for existing `HabitCompletion` on today's `dateKey`
    - Creates/updates/deletes the completion row

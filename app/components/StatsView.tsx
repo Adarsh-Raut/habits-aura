@@ -46,7 +46,7 @@ export default function StatsView({ habits, todayKey, initialStats }: Props) {
   const statsQuery = useQuery({
     queryKey: ["habitStats", selectedHabitId],
     queryFn: async () => {
-      const res = await fetch(`/api/habit/${selectedHabitId}/stats`, {
+      const res = await fetch(`/api/habits/${selectedHabitId}/stats`, {
         cache: "no-store",
       });
 
