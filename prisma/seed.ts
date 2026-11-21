@@ -22,14 +22,25 @@ const HABIT_TEMPLATES: { title: string; days: DayKey[]; completionRate: number }
   { title: "Drink 2L Water", days: ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"], completionRate: 0.75 },
 ];
 
+/** `consistency` scales every habit's completion rate so users differ. */
 const SEED_USERS = [
-  { name: "Alex Johnson", email: "alex@example.com", image: "https://api.dicebear.com/7.x/avataaars/png?seed=Alex" },
-  { name: "Sam Williams", email: "sam@example.com", image: "https://api.dicebear.com/7.x/avataaars/png?seed=Sam" },
-  { name: "Jordan Lee", email: "jordan@example.com", image: "https://api.dicebear.com/7.x/avataaars/png?seed=Jordan" },
-  { name: "Casey Brown", email: "casey@example.com", image: "https://api.dicebear.com/7.x/avataaars/png?seed=Casey" },
-  { name: "Morgan Davis", email: "morgan@example.com", image: "https://api.dicebear.com/7.x/avataaars/png?seed=Morgan" },
-  { name: "Taylor Miller", email: "taylor@example.com", image: "https://api.dicebear.com/7.x/avataaars/png?seed=Taylor" },
+  { name: "Alex Johnson", email: "alex@example.com", image: "https://api.dicebear.com/7.x/avataaars/png?seed=Alex", consistency: 1.15 },
+  { name: "Sam Williams", email: "sam@example.com", image: "https://api.dicebear.com/7.x/avataaars/png?seed=Sam", consistency: 1.0 },
+  { name: "Jordan Lee", email: "jordan@example.com", image: "https://api.dicebear.com/7.x/avataaars/png?seed=Jordan", consistency: 0.7 },
+  { name: "Casey Brown", email: "casey@example.com", image: "https://api.dicebear.com/7.x/avataaars/png?seed=Casey", consistency: 1.1 },
+  { name: "Morgan Davis", email: "morgan@example.com", image: "https://api.dicebear.com/7.x/avataaars/png?seed=Morgan", consistency: 0.95 },
+  { name: "Taylor Miller", email: "taylor@example.com", image: "https://api.dicebear.com/7.x/avataaars/png?seed=Taylor", consistency: 0.55 },
+  { name: "Riley Chen", email: "riley@example.com", image: "https://api.dicebear.com/7.x/avataaars/png?seed=Riley", consistency: 1.05 },
+  { name: "Avery Patel", email: "avery@example.com", image: "https://api.dicebear.com/7.x/avataaars/png?seed=Avery", consistency: 0.85 },
+  { name: "Quinn Nguyen", email: "quinn@example.com", image: "https://api.dicebear.com/7.x/avataaars/png?seed=Quinn", consistency: 0.4 },
+  { name: "Harper Kim", email: "harper@example.com", image: "https://api.dicebear.com/7.x/avataaars/png?seed=Harper", consistency: 1.2 },
+  { name: "Dakota Singh", email: "dakota@example.com", image: "https://api.dicebear.com/7.x/avataaars/png?seed=Dakota", consistency: 0.75 },
+  { name: "Emerson Lopez", email: "emerson@example.com", image: "https://api.dicebear.com/7.x/avataaars/png?seed=Emerson", consistency: 0.6 },
+  { name: "Rowan Garcia", email: "rowan@example.com", image: "https://api.dicebear.com/7.x/avataaars/png?seed=Rowan", consistency: 0.9 },
+  { name: "Sky Martin", email: "sky@example.com", image: "https://api.dicebear.com/7.x/avataaars/png?seed=Sky", consistency: 0.3 },
 ];
+
+const HISTORY_DAYS = 90;
 
 function randomInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -60,9 +71,16 @@ async function seed() {
   const existingUsers = await prisma.user.count();
   console.log(`📊 Existing users in database: ${existingUsers}`);
 
+  if (process.argv.includes("--reset")) {
+    const removed = await prisma.user.deleteMany({
+      where: { email: { endsWith: "@example.com" } },
+    });
+    console.log(`🧹 Removed ${removed.count} existing @example.com seed users`);
+  }
+
   // Create seed users (skip if already exists)
   console.log("👤 Creating seed users...");
-  const createdUsers = [];
+  const createdUsers: { id: string; consistency: number }[] = [];
   
   for (const userData of SEED_USERS) {
     // Check if user already exists
@@ -88,7 +106,7 @@ async function seed() {
         auraPoints: STARTING_AURA,
       },
     });
-    createdUsers.push(user);
+    createdUsers.push({ id: user.id, consistency: userData.consistency });
     console.log(`   - Created: ${userData.email}`);
   }
 
@@ -112,12 +130,12 @@ async function seed() {
           days: template.days,
           userId: user.id,
           createdAt: dateKeyToDate(
-            addDaysToKey(getTodayDateKey(TIME_ZONE), -29),
+            addDaysToKey(getTodayDateKey(TIME_ZONE), -(HISTORY_DAYS - 1)),
           ),
         },
       });
 
-      const dateKeys = generateDateKeys(30);
+      const dateKeys = generateDateKeys(HISTORY_DAYS);
       const completedDateKeys: string[] = [];
       const skippedDateKeys: string[] = [];
 
@@ -127,7 +145,9 @@ async function seed() {
 
         // Only create completion if it's a habit day
         if (template.days.includes(dayKey)) {
-          const action = getRandomCompletion(template.completionRate);
+          const action = getRandomCompletion(
+            Math.min(0.97, template.completionRate * user.consistency),
+          );
           if (action) {
             await prisma.habitCompletion.create({
               data: {

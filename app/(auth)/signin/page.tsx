@@ -13,6 +13,7 @@ import { BsGrid3X3Gap } from "react-icons/bs";
 import { DiAtom } from "react-icons/di";
 import { FaBolt, FaFireAlt, FaGoogle } from "react-icons/fa";
 import { IoRocketOutline } from "react-icons/io5";
+import DevLogin from "@/app/components/DevLogin";
 
 const features = [
   {
@@ -113,6 +114,7 @@ export default function SignIn() {
 
   return (
     <LazyMotion features={domAnimation}>
+      <DevLogin />
       <div className="relative z-10 flex flex-1 flex-col">
         <m.header
           variants={sectionVariants}
