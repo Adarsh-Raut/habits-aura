@@ -1,3 +1,5 @@
+/** Must match the `auraPoints` default in prisma/schema.prisma. */
+export const STARTING_AURA = 100;
 export const COMPLETE_AURA = 10;
 export const SKIP_AURA = -10;
 
@@ -21,4 +23,9 @@ export function auraDelta(
 /** Aura a habit has contributed, given its completion counts. */
 export function auraForCounts(completed: number, skipped: number) {
   return completed * COMPLETE_AURA + skipped * SKIP_AURA;
+}
+
+/** What a user's aura should be, derived purely from their completions. */
+export function expectedAura(completed: number, skipped: number) {
+  return STARTING_AURA + auraForCounts(completed, skipped);
 }

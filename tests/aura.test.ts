@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { auraDelta, auraForCounts } from "@/lib/aura";
+import { auraDelta, auraForCounts, expectedAura, STARTING_AURA } from "@/lib/aura";
 
 describe("aura", () => {
   it("complete = +10, skip = -10 relative to untouched", () => {
@@ -18,5 +18,10 @@ describe("aura", () => {
 
   it("matches the per-habit total used on delete", () => {
     expect(auraForCounts(5, 2)).toBe(30);
+  });
+
+  it("expected aura = starting aura + completions - skips", () => {
+    expect(expectedAura(0, 0)).toBe(STARTING_AURA);
+    expect(expectedAura(5, 2)).toBe(STARTING_AURA + 30);
   });
 });
