@@ -1,4 +1,5 @@
-1. add seed data to test app better.
-2. fix the loading files for each - profile, home, leaderboard, stats.
-3. see if you can use something for date logic in our project instead of how it is done now.
-4. the audio doesn't play when new habit is created.
+# Remaining ideas
+
+- Turn off `eslint.ignoreDuringBuilds` once lint is trusted in CI (deliberately left on for now).
+- Strict CSP with nonces (only a minimal CSP is set today).
+- Real Google sign-in has not been exercised in automated tests (local dev login is used).
