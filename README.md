@@ -411,3 +411,9 @@ node tests/e2e/landing.e2e.mjs            # landing page tests
 
 Days are tracked in the user's own timezone (a `tz` cookie set by the browser).
 Streaks are computed from completions, not stored.
+
+> ⚠️ The seed script and the test suites assume the local Docker database. Never point `DATABASE_URL` at production when running them.
+
+---
+
+Built by [Adarsh Raut](https://adarshraut.vercel.app)
