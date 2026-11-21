@@ -40,6 +40,8 @@ const HabitHeatmap = memo(function HabitHeatmap({
   windowStart,
   todayKey,
 }: Props) {
+  const completedCount = Object.keys(calendar).length;
+
   const data = useMemo(() => {
     const start = new Date(windowStart);
     start.setUTCHours(0, 0, 0, 0);
@@ -73,7 +75,7 @@ const HabitHeatmap = memo(function HabitHeatmap({
       fontSize={12}
       showColorLegend={false}
       labels={{
-        totalCount: "{{count}} days completed",
+        totalCount: `{{count}} ${completedCount === 1 ? "day" : "days"} completed`,
       }}
       tooltips={{
         activity: {

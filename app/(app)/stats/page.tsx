@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { getTodayDateKey } from "@/lib/date";
+import { getUserTimeZone } from "@/lib/timezone";
 import { calculateStreaks } from "@/lib/streaks";
 import { buildHabitStats } from "@/lib/stats";
 
@@ -10,7 +11,8 @@ export default async function Page() {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) return null;
 
-  const todayKey = getTodayDateKey();
+  const timeZone = getUserTimeZone();
+  const todayKey = getTodayDateKey(timeZone);
   const habits = await prisma.habit.findMany({
     where: { userId: session.user.id },
     select: {
@@ -32,7 +34,7 @@ export default async function Page() {
       habit.completions,
       habit.days,
       habit.createdAt,
-      { graceToday: true },
+      { timeZone, graceToday: true },
     );
 
     return {
@@ -43,7 +45,7 @@ export default async function Page() {
     };
   });
 
-  const initialStats = habits.length > 0 ? buildHabitStats(habits[0]) : null;
+  const initialStats = habits.length > 0 ? buildHabitStats(habits[0], timeZone) : null;
 
   return <StatsView habits={habitSummaries} todayKey={todayKey} initialStats={initialStats} />;
 }

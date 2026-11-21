@@ -1,73 +1,41 @@
-import { DAY_KEYS } from "@/lib/date";
+import {
+  addDaysToKey,
+  dateKeyInTimeZone,
+  getTodayDateKey,
+  weekdayKeyOfDateKey,
+} from "./date";
 
-export function startOfDay(date: Date) {
-  const nextDate = new Date(date);
-  nextDate.setHours(0, 0, 0, 0);
-  return nextDate;
-}
+type StreakOptions = {
+  timeZone: string;
+  /** Override "now" (tests). */
+  now?: Date;
+  /** Don't break the streak if today is scheduled but not done yet. */
+  graceToday?: boolean;
+};
 
-export function dateKeyFromDate(date: Date) {
-  return startOfDay(date).toISOString().split("T")[0];
-}
-
-export function parseDateKey(dateKey: string) {
-  const [year, month, day] = dateKey.split("-").map(Number);
-  return new Date(year, month - 1, day);
-}
-
-export function getPreviousScheduledDate(
-  date: Date,
-  habitDaySet: Set<string>,
-  createdDate: Date,
-) {
-  const cursor = startOfDay(date);
-  cursor.setDate(cursor.getDate() - 1);
-
-  while (cursor >= createdDate) {
-    if (habitDaySet.has(DAY_KEYS[cursor.getDay()])) {
-      return new Date(cursor);
-    }
-
-    cursor.setDate(cursor.getDate() - 1);
+function previousScheduledKey(
+  dateKey: string,
+  days: Set<string>,
+  createdKey: string,
+): string | null {
+  let cursor = addDaysToKey(dateKey, -1);
+  while (cursor >= createdKey) {
+    if (days.has(weekdayKeyOfDateKey(cursor))) return cursor;
+    cursor = addDaysToKey(cursor, -1);
   }
-
   return null;
 }
 
-export function getLatestScheduledDateOnOrBefore(
-  date: Date,
-  habitDaySet: Set<string>,
-  createdDate: Date,
-) {
-  const cursor = startOfDay(date);
-
-  while (cursor >= createdDate) {
-    if (habitDaySet.has(DAY_KEYS[cursor.getDay()])) {
-      return new Date(cursor);
-    }
-
-    cursor.setDate(cursor.getDate() - 1);
+function latestScheduledKeyOnOrBefore(
+  dateKey: string,
+  days: Set<string>,
+  createdKey: string,
+): string | null {
+  let cursor = dateKey;
+  while (cursor >= createdKey) {
+    if (days.has(weekdayKeyOfDateKey(cursor))) return cursor;
+    cursor = addDaysToKey(cursor, -1);
   }
-
-  return null;
-}
-
-export function getNextScheduledDate(
-  date: Date,
-  habitDaySet: Set<string>,
-  today: Date,
-) {
-  const cursor = startOfDay(date);
-  cursor.setDate(cursor.getDate() + 1);
-
-  while (cursor <= today) {
-    if (habitDaySet.has(DAY_KEYS[cursor.getDay()])) {
-      return new Date(cursor);
-    }
-
-    cursor.setDate(cursor.getDate() + 1);
-  }
-
   return null;
 }
 
@@ -75,95 +43,52 @@ export function calculateStreaks(
   completions: { dateKey: string }[],
   habitDays: string[],
   habitCreatedAt: Date,
-  options?: { graceToday?: boolean },
+  options: StreakOptions,
 ): { currentStreak: number; longestStreak: number } {
-  if (completions.length === 0) {
-    return { currentStreak: 0, longestStreak: 0 };
-  }
+  const days = new Set(habitDays);
+  const createdKey = dateKeyInTimeZone(habitCreatedAt, options.timeZone);
+  const todayKey = getTodayDateKey(options.timeZone, options.now);
 
-  const habitDaySet = new Set(habitDays);
-  const createdDate = startOfDay(habitCreatedAt);
-  const today = startOfDay(new Date());
-  const completedKeys = new Set<string>();
-  const completedDates: Date[] = [];
-
-  for (const completion of completions) {
-    const completionDate = parseDateKey(completion.dateKey);
-
+  // Only completions on scheduled days, on/after creation, not in the future.
+  const completed = new Set<string>();
+  for (const { dateKey } of completions) {
     if (
-      completionDate < createdDate ||
-      !habitDaySet.has(DAY_KEYS[completionDate.getDay()])
+      dateKey >= createdKey &&
+      dateKey <= todayKey &&
+      days.has(weekdayKeyOfDateKey(dateKey))
     ) {
-      continue;
+      completed.add(dateKey);
     }
-
-    completedKeys.add(completion.dateKey);
-    completedDates.push(completionDate);
   }
 
-  if (completedDates.length === 0) {
-    return { currentStreak: 0, longestStreak: 0 };
-  }
+  if (completed.size === 0) return { currentStreak: 0, longestStreak: 0 };
 
+  // Current streak: walk back from the latest scheduled day.
   let currentStreak = 0;
-  let expectedCurrentDate = getLatestScheduledDateOnOrBefore(
-    today,
-    habitDaySet,
-    createdDate,
-  );
+  let expected = latestScheduledKeyOnOrBefore(todayKey, days, createdKey);
 
   if (
-    options?.graceToday &&
-    expectedCurrentDate &&
-    dateKeyFromDate(expectedCurrentDate) === dateKeyFromDate(today) &&
-    !completedKeys.has(dateKeyFromDate(expectedCurrentDate))
+    options.graceToday &&
+    expected === todayKey &&
+    !completed.has(todayKey)
   ) {
-    expectedCurrentDate = getPreviousScheduledDate(
-      expectedCurrentDate,
-      habitDaySet,
-      createdDate,
-    );
+    expected = previousScheduledKey(todayKey, days, createdKey);
   }
 
-  while (expectedCurrentDate) {
-    if (!completedKeys.has(dateKeyFromDate(expectedCurrentDate))) {
-      break;
-    }
-
+  while (expected && completed.has(expected)) {
     currentStreak++;
-    expectedCurrentDate = getPreviousScheduledDate(
-      expectedCurrentDate,
-      habitDaySet,
-      createdDate,
-    );
+    expected = previousScheduledKey(expected, days, createdKey);
   }
 
+  // Longest streak: a completion extends the run if the previous scheduled
+  // day was also completed.
   let longestStreak = 0;
-  let streak = 0;
-  let previousCompletionDate: Date | null = null;
-
-  for (const completionDate of completedDates) {
-    if (!previousCompletionDate) {
-      streak = 1;
-      longestStreak = 1;
-      previousCompletionDate = completionDate;
-      continue;
-    }
-
-    const expectedNextDate = getNextScheduledDate(
-      previousCompletionDate,
-      habitDaySet,
-      today,
-    );
-
-    streak =
-      expectedNextDate &&
-      dateKeyFromDate(expectedNextDate) === dateKeyFromDate(completionDate)
-        ? streak + 1
-        : 1;
-
-    longestStreak = Math.max(longestStreak, streak);
-    previousCompletionDate = completionDate;
+  const runAt = new Map<string, number>();
+  for (const key of Array.from(completed).sort()) {
+    const prev = previousScheduledKey(key, days, createdKey);
+    const run = prev && completed.has(prev) ? (runAt.get(prev) ?? 0) + 1 : 1;
+    runAt.set(key, run);
+    if (run > longestStreak) longestStreak = run;
   }
 
   return { currentStreak, longestStreak };

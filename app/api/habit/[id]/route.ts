@@ -1,218 +1,148 @@
 import { NextResponse } from "next/server";
-import type { HabitAction } from "@prisma/client";
+import { Prisma } from "@prisma/client";
+import { getServerSession } from "next-auth";
+import { revalidatePath } from "next/cache";
+import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
-  getTodayDate,
+  dateKeyToDate,
   getTodayDateKey,
-  DAY_KEYS,
+  getTodayWeekdayKey,
   isTodayHabitDay,
 } from "@/lib/date";
-import { AURA_DELTA } from "@/lib/aura";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import { revalidatePath } from "next/cache";
-import { habitToggleLimiter, habitDeleteLimiter } from "@/lib/ratelimit";
+import {
+  auraDelta,
+  auraForAction,
+  auraForCounts,
+  type CompletionAction,
+} from "@/lib/aura";
+import {
+  habitDeleteLimiter,
+  habitToggleLimiter,
+  habitUpdateLimiter,
+} from "@/lib/ratelimit";
 import { calculateStreaks } from "@/lib/streaks";
+import { getHabitForUser } from "@/lib/habits";
+import { getUserTimeZone } from "@/lib/timezone";
+import { parseHabitInput } from "@/lib/validation";
+import {
+  badRequest,
+  notFound,
+  rateLimitResponse,
+  readJson,
+  unauthorized,
+} from "@/lib/api";
 
-type TxClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
+type TxClient = Prisma.TransactionClient;
+type Status = "NONE" | CompletionAction;
 
-async function updateHabitStreaks(
-  tx: TxClient,
-  habitId: string,
-  habitDays: string[],
-  habitCreatedAt: Date,
-): Promise<{ currentStreak: number; longestStreak: number }> {
-  const completions = await tx.habitCompletion.findMany({
-    where: { habitId, action: "COMPLETED" },
-    select: { dateKey: true },
-    orderBy: { dateKey: "asc" },
-  });
+const NEXT_STATUS: Record<Status, Status> = {
+  NONE: "COMPLETED",
+  COMPLETED: "SKIPPED",
+  SKIPPED: "NONE",
+};
 
-  const streaks = calculateStreaks(completions, habitDays, habitCreatedAt);
-
-  await tx.habit.update({
-    where: { id: habitId },
-    data: streaks,
-  });
-
-  return streaks;
-}
-
-async function persistHabitStreaks(
-  tx: TxClient,
-  habitId: string,
-  streaks: { currentStreak: number; longestStreak: number },
-) {
-  await tx.habit.update({
-    where: { id: habitId },
-    data: streaks,
-  });
+/** Serialises concurrent writes to the same habit (double-clicks, 2 tabs). */
+async function lockHabit(tx: TxClient, habitId: string) {
+  await tx.$queryRaw`SELECT id FROM habits WHERE id = ${habitId} FOR UPDATE`;
 }
 
 async function applyAuraDelta(tx: TxClient, userId: string, delta: number) {
-  if (delta === 0) {
-    return;
-  }
-
+  if (delta === 0) return;
   await tx.user.update({
     where: { id: userId },
-    data:
-      delta > 0
-        ? { auraPoints: { increment: delta } }
-        : { auraPoints: { decrement: Math.abs(delta) } },
+    data: { auraPoints: { increment: delta } },
   });
 }
 
+function revalidateHabitPages(habitId?: string) {
+  revalidatePath("/");
+  revalidatePath("/leaderboard");
+  revalidatePath("/stats");
+  if (habitId) revalidatePath(`/habit/${habitId}/edit`);
+}
+
 /**
- * NONE -> COMPLETED
- * COMPLETED -> SKIPPED
- * SKIPPED -> NONE (delete row)
+ * NONE -> COMPLETED (+aura) -> SKIPPED (-aura) -> NONE
  */
 export async function PATCH(
   _: Request,
   { params }: { params: { id: string } },
 ) {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  if (!session?.user?.id) return unauthorized();
+  const userId = session.user.id;
 
-  const { success, remaining, reset } = await habitToggleLimiter.limit(session.user.id);
-
-  if (!success) {
-    return NextResponse.json(
-      {
-        error: "Too many requests. Please try again later.",
-        retryAfter: Math.ceil((reset - Date.now()) / 1000),
-      },
-      {
-        status: 429,
-        headers: {
-          "Retry-After": Math.ceil((reset - Date.now()) / 1000).toString(),
-          "X-RateLimit-Remaining": remaining.toString(),
-        },
-      },
-    );
-  }
+  const limited = rateLimitResponse(await habitToggleLimiter.limit(userId));
+  if (limited) return limited;
 
   const habitId = params.id;
-  const today = getTodayDate();
-  const todayKey = getTodayDateKey();
+  const timeZone = getUserTimeZone();
+  const todayKey = getTodayDateKey(timeZone);
 
-  const habit = await prisma.habit.findUnique({
-    where: { id: habitId },
-    select: {
-      id: true,
-      userId: true,
-      days: true,
-      createdAt: true,
-      currentStreak: true,
-      longestStreak: true,
-    },
+  const habit = await prisma.habit.findFirst({
+    where: { id: habitId, userId },
+    select: { days: true, createdAt: true },
   });
 
-  if (!habit || habit.userId !== session.user.id) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!habit) return notFound();
+
+  if (!isTodayHabitDay(habit.days, timeZone)) {
+    return badRequest("Cannot toggle habit on non-scheduled days");
   }
 
-  if (!isTodayHabitDay(habit.days)) {
-    return NextResponse.json(
-      { error: "Cannot toggle habit on non-scheduled days" },
-      { status: 400 }
-    );
-  }
+  const status = await prisma.$transaction(async (tx) => {
+    await lockHabit(tx, habitId);
 
-  let currentStreak = 0;
-  let longestStreak = 0;
-
-  await prisma.$transaction(async (tx) => {
     const existing = await tx.habitCompletion.findUnique({
-      where: {
-        habitId_dateKey: {
-          habitId,
-          dateKey: todayKey,
-        },
-      },
+      where: { habitId_dateKey: { habitId, dateKey: todayKey } },
       select: { id: true, action: true },
     });
 
-    if (!existing) {
+    const from: Status = existing?.action ?? "NONE";
+    const to = NEXT_STATUS[from];
+
+    if (to === "NONE") {
+      await tx.habitCompletion.delete({ where: { id: existing!.id } });
+    } else if (existing) {
+      await tx.habitCompletion.update({
+        where: { id: existing.id },
+        data: { action: to },
+      });
+    } else {
       await tx.habitCompletion.create({
         data: {
           habitId,
-          date: today,
+          date: dateKeyToDate(todayKey),
           dateKey: todayKey,
-          action: "COMPLETED",
+          action: to,
         },
       });
-
-      await applyAuraDelta(tx, session.user.id, AURA_DELTA);
-
-      const streaks = await updateHabitStreaks(
-        tx,
-        habitId,
-        habit.days,
-        habit.createdAt,
-      );
-      currentStreak = streaks.currentStreak;
-      longestStreak = streaks.longestStreak;
-
-      return;
     }
 
-    if (existing.action === "COMPLETED") {
-      await tx.habitCompletion.update({
-        where: { id: existing.id },
-        data: { action: "SKIPPED" },
-      });
+    await applyAuraDelta(
+      tx,
+      userId,
+      auraDelta(from === "NONE" ? null : from, to === "NONE" ? null : to),
+    );
 
-      await applyAuraDelta(tx, session.user.id, -AURA_DELTA);
-
-      currentStreak = 0;
-
-      if (habit.currentStreak < habit.longestStreak) {
-        longestStreak = habit.longestStreak;
-        await persistHabitStreaks(tx, habitId, {
-          currentStreak,
-          longestStreak,
-        });
-      } else {
-        const streaks = await updateHabitStreaks(
-          tx,
-          habitId,
-          habit.days,
-          habit.createdAt,
-        );
-        currentStreak = streaks.currentStreak;
-        longestStreak = streaks.longestStreak;
-      }
-
-      return;
-    }
-
-    await tx.habitCompletion.delete({
-      where: { id: existing.id },
-    });
-
-    currentStreak = 0;
-    longestStreak = habit.longestStreak;
-
-    await persistHabitStreaks(tx, habitId, {
-      currentStreak,
-      longestStreak,
-    });
+    return to;
   });
 
-  revalidatePath("/");
-  revalidatePath("/leaderboard");
-  revalidatePath("/stats");
-  revalidatePath(`/habit/${habitId}/edit`);
-
-  return NextResponse.json({ 
-    ok: true, 
-    currentStreak, 
-    longestStreak 
+  const completions = await prisma.habitCompletion.findMany({
+    where: { habitId, action: "COMPLETED" },
+    select: { dateKey: true },
   });
+  const { currentStreak, longestStreak } = calculateStreaks(
+    completions,
+    habit.days,
+    habit.createdAt,
+    { timeZone, graceToday: true },
+  );
+
+  revalidateHabitPages(habitId);
+
+  return NextResponse.json({ ok: true, status, currentStreak, longestStreak });
 }
 
 /* ---------------- EDIT HABIT ---------------- */
@@ -222,105 +152,57 @@ export async function PUT(
   { params }: { params: { id: string } },
 ) {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  if (!session?.user?.id) return unauthorized();
+  const userId = session.user.id;
+
+  const limited = rateLimitResponse(await habitUpdateLimiter.limit(userId));
+  if (limited) return limited;
+
+  const parsed = parseHabitInput(await readJson(req));
+  if (!parsed.ok) return badRequest(parsed.error);
+  const { title, days: newDays } = parsed.value;
 
   const habitId = params.id;
-
-  const habit = await prisma.habit.findUnique({
-    where: { id: habitId },
-    select: { id: true, userId: true, days: true, createdAt: true },
+  const habit = await prisma.habit.findFirst({
+    where: { id: habitId, userId },
+    select: { days: true },
   });
 
-  if (!habit || habit.userId !== session.user.id) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
-  }
+  if (!habit) return notFound();
 
-  const body = await req.json();
-  const { title, days } = body;
-
-  if (!title || !Array.isArray(days)) {
-    return NextResponse.json({ error: "Invalid input" }, { status: 400 });
-  }
-
-  const newDays = days;
-  const todayKey = getTodayDateKey();
-  const todayWeekday = DAY_KEYS[new Date().getDay()];
-  const scheduleChanged =
-    newDays.length !== habit.days.length ||
-    newDays.some((day) => !habit.days.includes(day));
-
-  const daysRemoved = habit.days.filter((d) => !newDays.includes(d));
-  const todayWasRemoved = daysRemoved.includes(todayWeekday);
+  const timeZone = getUserTimeZone();
+  const todayKey = getTodayDateKey(timeZone);
+  const todayWasRemoved =
+    habit.days.includes(getTodayWeekdayKey(timeZone)) &&
+    !newDays.includes(getTodayWeekdayKey(timeZone));
 
   await prisma.$transaction(async (tx) => {
+    await lockHabit(tx, habitId);
+
+    // Today is no longer scheduled: drop today's record and its aura.
     if (todayWasRemoved) {
-      const existingCompletion = await tx.habitCompletion.findUnique({
-        where: {
-          habitId_dateKey: {
-            habitId,
-            dateKey: todayKey,
-          },
-        },
+      const existing = await tx.habitCompletion.findUnique({
+        where: { habitId_dateKey: { habitId, dateKey: todayKey } },
       });
 
-      if (existingCompletion) {
-        await tx.habitCompletion.delete({
-          where: { id: existingCompletion.id },
-        });
-
-        if (existingCompletion.action === "COMPLETED") {
-          await applyAuraDelta(tx, session.user.id, -AURA_DELTA);
-        }
+      if (existing) {
+        await tx.habitCompletion.delete({ where: { id: existing.id } });
+        await applyAuraDelta(tx, userId, -auraForAction(existing.action));
       }
     }
 
     await tx.habit.update({
       where: { id: habitId },
-      data: {
-        title: title.trim(),
-        days: newDays,
-      },
+      data: { title, days: newDays },
     });
-
-    if (scheduleChanged) {
-      await updateHabitStreaks(tx, habitId, newDays, habit.createdAt);
-    }
   });
 
-  revalidatePath("/");
-  revalidatePath("/leaderboard");
-  revalidatePath("/stats");
-  revalidatePath(`/habit/${habitId}/edit`);
+  revalidateHabitPages(habitId);
 
-  const updatedHabit = await prisma.habit.findUnique({
-    where: { id: habitId },
-    select: {
-      id: true,
-      title: true,
-      createdAt: true,
-      currentStreak: true,
-      days: true,
-      completions: {
-        where: { dateKey: todayKey },
-        select: { action: true },
-      },
-    },
-  });
+  const updated = await getHabitForUser(userId, habitId, timeZone);
+  if (!updated) return notFound();
 
-  if (!updatedHabit) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
-  }
-
-  return NextResponse.json({
-    id: updatedHabit.id,
-    title: updatedHabit.title,
-    createdAt: updatedHabit.createdAt,
-    status: updatedHabit.completions[0]?.action ?? "NONE",
-    streak: updatedHabit.currentStreak,
-    days: updatedHabit.days,
-  });
+  return NextResponse.json(updated);
 }
 
 /* ---------------- DELETE HABIT ---------------- */
@@ -330,58 +212,42 @@ export async function DELETE(
   { params }: { params: { id: string } },
 ) {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  if (!session?.user?.id) return unauthorized();
+  const userId = session.user.id;
 
-  const { success, remaining, reset } = await habitDeleteLimiter.limit(session.user.id);
+  const limited = rateLimitResponse(await habitDeleteLimiter.limit(userId));
+  if (limited) return limited;
 
-  if (!success) {
-    return NextResponse.json(
-      {
-        error: "Too many requests. Please try again later.",
-        retryAfter: Math.ceil((reset - Date.now()) / 1000),
-      },
-      {
-        status: 429,
-        headers: {
-          "Retry-After": Math.ceil((reset - Date.now()) / 1000).toString(),
-          "X-RateLimit-Remaining": remaining.toString(),
-        },
-      },
-    );
-  }
-
+  const habitId = params.id;
   const habit = await prisma.habit.findFirst({
-    where: {
-      id: params.id,
-      userId: session.user.id,
-    },
+    where: { id: habitId, userId },
     select: { id: true },
   });
 
-  if (!habit) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
-  }
+  if (!habit) return notFound();
 
   await prisma.$transaction(async (tx) => {
-    const completedCount = await tx.habitCompletion.count({
-      where: {
-        habitId: params.id,
-        action: "COMPLETED" satisfies HabitAction,
-      },
-    });
+    await lockHabit(tx, habitId);
 
-    await applyAuraDelta(tx, session.user.id, -(completedCount * AURA_DELTA));
-
-    await tx.habit.delete({
-      where: { id: params.id },
+    const counts = await tx.habitCompletion.groupBy({
+      by: ["action"],
+      where: { habitId },
+      _count: { _all: true },
     });
+    const countOf = (action: CompletionAction) =>
+      counts.find((c) => c.action === action)?._count._all ?? 0;
+
+    // Take back whatever aura this habit contributed.
+    await applyAuraDelta(
+      tx,
+      userId,
+      -auraForCounts(countOf("COMPLETED"), countOf("SKIPPED")),
+    );
+
+    await tx.habit.deleteMany({ where: { id: habitId, userId } });
   });
 
-  revalidatePath("/");
-  revalidatePath("/leaderboard");
-  revalidatePath("/stats");
+  revalidateHabitPages();
 
   return NextResponse.json({ ok: true });
 }

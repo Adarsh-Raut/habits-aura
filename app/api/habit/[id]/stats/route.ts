@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { buildHabitStats } from "@/lib/stats";
+import { getUserTimeZone } from "@/lib/timezone";
 
 export async function GET(
   _: Request,
@@ -33,5 +34,5 @@ export async function GET(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  return NextResponse.json(buildHabitStats(habit));
+  return NextResponse.json(buildHabitStats(habit, getUserTimeZone()));
 }

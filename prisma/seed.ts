@@ -1,8 +1,16 @@
 import { PrismaClient } from "@prisma/client";
 
-const prisma = new PrismaClient();
+import {
+  addDaysToKey,
+  dateKeyToDate,
+  getTodayDateKey,
+  resolveTimeZone,
+  weekdayKeyOfDateKey,
+} from "../lib/date";
+import { auraForCounts } from "../lib/aura";
 
-const DAY_KEYS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+const prisma = new PrismaClient();
+const TIME_ZONE = resolveTimeZone(process.env.SEED_TIME_ZONE);
 
 const HABIT_TEMPLATES = [
   { title: "Morning Workout", days: ["MON", "TUE", "WED", "THU", "FRI"], completionRate: 0.8 },
@@ -37,16 +45,9 @@ function getRandomCompletion(rate: number): "COMPLETED" | "SKIPPED" | null {
 }
 
 function generateDateKeys(days: number): string[] {
+  const today = getTodayDateKey(TIME_ZONE);
   const dateKeys: string[] = [];
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  for (let i = days - 1; i >= 0; i--) {
-    const date = new Date(today);
-    date.setDate(date.getDate() - i);
-    dateKeys.push(date.toISOString().split("T")[0]);
-  }
-
+  for (let i = days - 1; i >= 0; i--) dateKeys.push(addDaysToKey(today, -i));
   return dateKeys;
 }
 
@@ -109,8 +110,9 @@ async function seed() {
           title: template.title,
           days: template.days,
           userId: user.id,
-          currentStreak: 0,
-          longestStreak: 0,
+          createdAt: dateKeyToDate(
+            addDaysToKey(getTodayDateKey(TIME_ZONE), -29),
+          ),
         },
       });
 
@@ -120,8 +122,7 @@ async function seed() {
 
       // Generate completions with correct habitId
       for (const dateKey of dateKeys) {
-        const date = new Date(dateKey);
-        const dayKey = DAY_KEYS[date.getDay()];
+        const dayKey = weekdayKeyOfDateKey(dateKey);
 
         // Only create completion if it's a habit day
         if (template.days.includes(dayKey)) {
@@ -130,7 +131,7 @@ async function seed() {
             await prisma.habitCompletion.create({
               data: {
                 habitId: habit.id,
-                date: new Date(dateKey),
+                date: dateKeyToDate(dateKey),
                 dateKey,
                 action,
               },
@@ -145,76 +146,8 @@ async function seed() {
         }
       }
 
-      // Calculate streaks
-      const completedSet = new Set(completedDateKeys);
-      const habitDaySet = new Set(template.days);
-      
-      let currentStreak = 0;
-      let longestStreak = 0;
-      let tempStreak = 0;
-
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      // Calculate current streak
-      for (let i = 0; i < 365; i++) {
-        const date = new Date(today);
-        date.setDate(date.getDate() - i);
-        const dayKey = DAY_KEYS[date.getDay()];
-        const dateKey = date.toISOString().split("T")[0];
-
-        if (habitDaySet.has(dayKey)) {
-          if (completedSet.has(dateKey)) {
-            currentStreak++;
-          } else {
-            break;
-          }
-        }
-      }
-
-      // Calculate longest streak
-      const sortedDates = Array.from(completedSet).sort();
-      tempStreak = 0;
-      
-      for (let i = 0; i < sortedDates.length; i++) {
-        const currentDate = new Date(sortedDates[i]);
-        const currentDay = DAY_KEYS[currentDate.getDay()];
-        
-        if (!habitDaySet.has(currentDay)) continue;
-        
-        if (i === 0) {
-          tempStreak = 1;
-        } else {
-          let foundPrev = false;
-          for (let d = 1; d <= 7; d++) {
-            const checkDate = new Date(currentDate);
-            checkDate.setDate(checkDate.getDate() - d);
-            if (habitDaySet.has(DAY_KEYS[checkDate.getDay()]) && completedSet.has(checkDate.toISOString().split("T")[0])) {
-              tempStreak++;
-              foundPrev = true;
-              break;
-            }
-          }
-          
-          if (!foundPrev) {
-            tempStreak = 1;
-          }
-        }
-        
-        longestStreak = Math.max(longestStreak, tempStreak);
-      }
-
-      // Update habit with calculated streaks
-      await prisma.habit.update({
-        where: { id: habit.id },
-        data: {
-          currentStreak,
-          longestStreak,
-        },
-      });
-
       // Update user aura points
-      const auraChange = completedDateKeys.length * 10 - skippedDateKeys.length * 10;
+      const auraChange = auraForCounts(completedDateKeys.length, skippedDateKeys.length);
       await prisma.user.update({
         where: { id: user.id },
         data: {

@@ -1,6 +1,7 @@
 import QueryProvider from "@/app/components/QueryProvider";
 import Navbar from "@/app/components/Navbar";
 import Sidebar from "@/app/components/Sidebar";
+import TimezoneSync from "@/app/components/TimezoneSync";
 import { authOptions } from "@/lib/auth";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
@@ -18,6 +19,7 @@ export default async function AppLayout({
 
   return (
     <QueryProvider>
+      <TimezoneSync />
       <div className="drawer min-h-screen bg-[#242933] lg:drawer-open">
         <input id="sidebar-drawer" type="checkbox" className="drawer-toggle" />
 

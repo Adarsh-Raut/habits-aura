@@ -4,59 +4,29 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { habitCreateLimiter } from "@/lib/ratelimit";
+import { parseHabitInput } from "@/lib/validation";
+import {
+  badRequest,
+  rateLimitResponse,
+  readJson,
+  unauthorized,
+} from "@/lib/api";
 
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    if (!session?.user?.id) return unauthorized();
 
-    const { success, remaining, reset } = await habitCreateLimiter.limit(
-      session.user.id,
+    const limited = rateLimitResponse(
+      await habitCreateLimiter.limit(session.user.id),
     );
+    if (limited) return limited;
 
-    if (!success) {
-      return NextResponse.json(
-        {
-          error: "Too many requests. Please try again later.",
-          retryAfter: Math.ceil((reset - Date.now()) / 1000),
-        },
-        {
-          status: 429,
-          headers: {
-            "Retry-After": Math.ceil((reset - Date.now()) / 1000).toString(),
-            "X-RateLimit-Remaining": remaining.toString(),
-          },
-        },
-      );
-    }
-
-    const body = await req.json();
-    const title =
-      typeof body.title === "string" ? body.title.trim().slice(0, 120) : "";
-    const days: string[] = Array.isArray(body.days)
-      ? Array.from(
-          new Set(
-            body.days.filter((day: unknown): day is string => typeof day === "string"),
-          ),
-        )
-      : [];
-
-    if (
-      !title ||
-      !Array.isArray(days) ||
-      days.some((day) => typeof day !== "string")
-    ) {
-      return NextResponse.json({ error: "Invalid input" }, { status: 400 });
-    }
+    const parsed = parseHabitInput(await readJson(req));
+    if (!parsed.ok) return badRequest(parsed.error);
 
     const habit = await prisma.habit.create({
-      data: {
-        title,
-        days,
-        userId: session.user.id,
-      },
+      data: { ...parsed.value, userId: session.user.id },
     });
 
     revalidatePath("/");
@@ -67,7 +37,7 @@ export async function POST(req: Request) {
         title: habit.title,
         createdAt: habit.createdAt,
         status: "NONE",
-        streak: habit.currentStreak,
+        streak: 0,
         days: habit.days,
       },
       { status: 201 },
