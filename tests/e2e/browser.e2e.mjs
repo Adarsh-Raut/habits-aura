@@ -128,8 +128,30 @@ async function run(tz) {
   // leaderboard
   await page.goto(BASE + "/leaderboard");
   await page.waitForTimeout(800);
-  check("leaderboard shows user's rank card", /Your Rank/.test(await page.locator("body").innerText()));
+  const lbText = await page.locator("body").innerText();
+  const ahead = await prisma.user.count({ where: { OR: [{ auraPoints: { gt: await aura() } }, { auraPoints: await aura(), id: { lt: user.id } }] } });
+  const rankShown = Number(/Your Rank\s*#(\d+)/.exec(lbText)?.[1]);
+  check(`leaderboard: your rank #${ahead + 1} matches DB`, rankShown === ahead + 1, `shown ${rankShown}`);
+  const [top, second] = await prisma.user.findMany({ orderBy: [{ auraPoints: "desc" }, { id: "asc" }], take: 2, select: { name: true } });
+  const topIdx = lbText.indexOf(top.name);
+  const secondIdx = lbText.indexOf(second.name);
+  check("leaderboard: ranked in aura order (top user listed above #2)", topIdx > -1 && secondIdx > topIdx, `${top.name}@${topIdx} ${second.name}@${secondIdx}`);
   await page.screenshot({ path: `${SHOTS}/${tz.replace("/", "_")}-4-leaderboard.png` });
+
+  // day rollover: a tab left open past midnight refetches + refreshes
+  {
+    const rollover = await ctx.newPage();
+    await rollover.clock.install();
+    await rollover.goto(BASE + "/");
+    await rollover.waitForSelector("text=Renamed habit");
+    const reqs = [];
+    rollover.on("request", (r) => reqs.push(r.url()));
+    await rollover.clock.fastForward("24:00:00");
+    await rollover.waitForTimeout(1500);
+    check("rollover: habits refetched after midnight", reqs.some((u) => u.includes("/api/habits")), reqs.join(","));
+    check("rollover: page refreshed after midnight", reqs.some((u) => u.includes("_rsc")), reqs.join(","));
+    await rollover.close();
+  }
 
   // delete via menu
   await page.goto(BASE + "/");

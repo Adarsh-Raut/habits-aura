@@ -33,33 +33,42 @@ const alex = await sessionFor("alex@example.com");
 const sam = await sessionFor("sam@example.com");
 const call = api(alex.jwt, "Asia/Kolkata");
 
+// --- REST layout + security headers
+const root = await fetch(BASE + "/signin");
+check("security: nosniff", root.headers.get("x-content-type-options") === "nosniff");
+check("security: frame deny", root.headers.get("x-frame-options") === "DENY");
+check("security: referrer policy", !!root.headers.get("referrer-policy"));
+check("security: CSP frame-ancestors", (root.headers.get("content-security-policy") ?? "").includes("frame-ancestors 'none'"));
+check("old /api/habit route is gone", (await call("/api/habit", { method: "POST", body: "{}" })).status === 404);
+check("GET /api/habits works", (await call("/api/habits")).status === 200);
+
 // --- auth
 check("unauthenticated list -> 401", (await fetch(BASE + "/api/habits")).status === 401);
 
 // --- validation
-const bad = async (body) => (await call("/api/habit", { method: "POST", body: JSON.stringify(body) })).status;
+const bad = async (body) => (await call("/api/habits", { method: "POST", body: JSON.stringify(body) })).status;
 check("create: empty title -> 400", (await bad({ title: " ", days: ALL })) === 400);
 check("create: long title -> 400", (await bad({ title: "x".repeat(121), days: ALL })) === 400);
 check("create: no days -> 400", (await bad({ title: "a", days: [] })) === 400);
 check("create: bogus day -> 400", (await bad({ title: "a", days: ["XYZ"] })) === 400);
-check("create: bad JSON -> 400", (await call("/api/habit", { method: "POST", body: "{nope" })).status === 400);
+check("create: bad JSON -> 400", (await call("/api/habits", { method: "POST", body: "{nope" })).status === 400);
 
 // --- create + toggle cycle + aura rules (+10 / -10)
-const created = await (await call("/api/habit", { method: "POST", body: JSON.stringify({ title: "  e2e habit ", days: ALL }) })).json();
+const created = await (await call("/api/habits", { method: "POST", body: JSON.stringify({ title: "  e2e habit ", days: ALL }) })).json();
 check("create: title trimmed", created.title === "e2e habit");
 const a0 = await aura(alex.user.id);
-const t1 = await (await call(`/api/habit/${created.id}`, { method: "PATCH" })).json();
+const t1 = await (await call(`/api/habits/${created.id}`, { method: "PATCH" })).json();
 check("toggle 1 -> COMPLETED, streak 1", t1.status === "COMPLETED" && t1.currentStreak === 1);
 check("aura +10 on complete", (await aura(alex.user.id)) === a0 + 10);
-const t2 = await (await call(`/api/habit/${created.id}`, { method: "PATCH" })).json();
+const t2 = await (await call(`/api/habits/${created.id}`, { method: "PATCH" })).json();
 check("toggle 2 -> SKIPPED, streak 0", t2.status === "SKIPPED" && t2.currentStreak === 0);
 check("aura -10 vs start on skip", (await aura(alex.user.id)) === a0 - 10);
-const t3 = await (await call(`/api/habit/${created.id}`, { method: "PATCH" })).json();
+const t3 = await (await call(`/api/habits/${created.id}`, { method: "PATCH" })).json();
 check("toggle 3 -> NONE", t3.status === "NONE");
 check("aura back to start", (await aura(alex.user.id)) === a0);
 
 // --- race: 8 simultaneous toggles must not 500 and stay consistent
-const results = await Promise.all(Array.from({ length: 8 }, () => call(`/api/habit/${created.id}`, { method: "PATCH" })));
+const results = await Promise.all(Array.from({ length: 8 }, () => call(`/api/habits/${created.id}`, { method: "PATCH" })));
 const codes = results.map((r) => r.status);
 check("race: no 500s", codes.every((c) => c === 200), codes.join(","));
 const rows = await prisma.habitCompletion.findMany({ where: { habitId: created.id } });
@@ -70,33 +79,33 @@ check("race: aura consistent with state", (await aura(alex.user.id)) === auraExp
 
 // --- ownership
 const other = api(sam.jwt, "Asia/Kolkata");
-check("other user can't toggle", (await other(`/api/habit/${created.id}`, { method: "PATCH" })).status === 404);
-check("other user can't edit", (await other(`/api/habit/${created.id}`, { method: "PUT", body: JSON.stringify({ title: "x", days: ALL }) })).status === 404);
-check("other user can't delete", (await other(`/api/habit/${created.id}`, { method: "DELETE" })).status === 404);
-check("other user can't read stats", (await other(`/api/habit/${created.id}/stats`)).status === 404);
+check("other user can't toggle", (await other(`/api/habits/${created.id}`, { method: "PATCH" })).status === 404);
+check("other user can't edit", (await other(`/api/habits/${created.id}`, { method: "PUT", body: JSON.stringify({ title: "x", days: ALL }) })).status === 404);
+check("other user can't delete", (await other(`/api/habits/${created.id}`, { method: "DELETE" })).status === 404);
+check("other user can't read stats", (await other(`/api/habits/${created.id}/stats`)).status === 404);
 
 // --- edit validation + removing today refunds aura
-check("edit: bad days -> 400", (await call(`/api/habit/${created.id}`, { method: "PUT", body: JSON.stringify({ title: "x", days: ["NOPE"] }) })).status === 400);
-check("edit: non-string title -> 400 (no crash)", (await call(`/api/habit/${created.id}`, { method: "PUT", body: JSON.stringify({ title: 5, days: ALL }) })).status === 400);
+check("edit: bad days -> 400", (await call(`/api/habits/${created.id}`, { method: "PUT", body: JSON.stringify({ title: "x", days: ["NOPE"] }) })).status === 400);
+check("edit: non-string title -> 400 (no crash)", (await call(`/api/habits/${created.id}`, { method: "PUT", body: JSON.stringify({ title: 5, days: ALL }) })).status === 400);
 // ensure COMPLETED today, then remove today's weekday
 await prisma.habitCompletion.deleteMany({ where: { habitId: created.id } });
 await prisma.user.update({ where: { id: alex.user.id }, data: { auraPoints: a0 } });
-await call(`/api/habit/${created.id}`, { method: "PATCH" }); // COMPLETED => a0+10
+await call(`/api/habits/${created.id}`, { method: "PATCH" }); // COMPLETED => a0+10
 const todayIdx = new Date(keyIn("Asia/Kolkata") + "T00:00:00Z").getUTCDay();
 const withoutToday = ALL.filter((_, i) => i !== todayIdx);
-const edited = await call(`/api/habit/${created.id}`, { method: "PUT", body: JSON.stringify({ title: "renamed", days: withoutToday }) });
+const edited = await call(`/api/habits/${created.id}`, { method: "PUT", body: JSON.stringify({ title: "renamed", days: withoutToday }) });
 const editedBody = await edited.json();
 check("edit: ok + renamed", edited.status === 200 && editedBody.title === "renamed" && editedBody.status === "NONE");
 check("edit: removing today refunds aura", (await aura(alex.user.id)) === a0);
-check("toggle on non-scheduled day -> 400", (await call(`/api/habit/${created.id}`, { method: "PATCH" })).status === 400);
+check("toggle on non-scheduled day -> 400", (await call(`/api/habits/${created.id}`, { method: "PATCH" })).status === 400);
 
 // --- delete takes back aura (1 completed + 1 skipped in history)
 await prisma.habitCompletion.createMany({ data: [
-  { habitId: created.id, date: new Date("2026-01-05"), dateKey: "2026-01-05", action: "COMPLETED" },
-  { habitId: created.id, date: new Date("2026-01-06"), dateKey: "2026-01-06", action: "SKIPPED" },
+  { habitId: created.id, dateKey: "2026-01-05", action: "COMPLETED" },
+  { habitId: created.id, dateKey: "2026-01-06", action: "SKIPPED" },
 ] });
 await prisma.user.update({ where: { id: alex.user.id }, data: { auraPoints: a0 + 10 - 10 + 100 } });
-const del = await call(`/api/habit/${created.id}`, { method: "DELETE" });
+const del = await call(`/api/habits/${created.id}`, { method: "DELETE" });
 check("delete: ok", del.status === 200);
 check("delete: aura reversed (-(10) + 10 = 0 net of history)", (await aura(alex.user.id)) === a0 + 100);
 check("delete: gone", (await prisma.habit.count({ where: { id: created.id } })) === 0);
@@ -104,11 +113,24 @@ check("delete: gone", (await prisma.habit.count({ where: { id: created.id } })) 
 // --- timezone: store the user's local day
 for (const tz of ["Pacific/Kiritimati", "Pacific/Pago_Pago", "Asia/Kolkata", "bogus/zone"]) {
   const c = api(alex.jwt, tz);
-  const h = await (await c("/api/habit", { method: "POST", body: JSON.stringify({ title: "tz " + tz, days: ALL }) })).json();
-  await c(`/api/habit/${h.id}`, { method: "PATCH" });
+  const h = await (await c("/api/habits", { method: "POST", body: JSON.stringify({ title: "tz " + tz, days: ALL }) })).json();
+  await c(`/api/habits/${h.id}`, { method: "PATCH" });
   const row = await prisma.habitCompletion.findFirst({ where: { habitId: h.id } });
   check(`tz ${tz}: dateKey = local day`, row.dateKey === keyIn(tz.startsWith("bogus") ? "UTC" : tz), row.dateKey);
-  await c(`/api/habit/${h.id}`, { method: "DELETE" });
+  await c(`/api/habits/${h.id}`, { method: "DELETE" });
+}
+
+// --- list only looks at recent history but old rows don't break it
+{
+  const h = await (await call("/api/habits", { method: "POST", body: JSON.stringify({ title: "old history", days: ALL }) })).json();
+  await prisma.habitCompletion.createMany({ data: [
+    { habitId: h.id, dateKey: "2020-01-01", action: "COMPLETED" },
+    { habitId: h.id, dateKey: keyIn("Asia/Kolkata"), action: "COMPLETED" },
+  ] });
+  const list = (await (await call("/api/habits")).json()).habits;
+  const found = list.find((x) => x.id === h.id);
+  check("list: old rows ignored, today's status + streak ok", found.status === "COMPLETED" && found.streak === 1);
+  await call(`/api/habits/${h.id}`, { method: "DELETE" });
 }
 
 // --- pages render
@@ -117,8 +139,15 @@ for (const p of ["/", "/stats", "/leaderboard", "/create"]) {
   check(`page ${p} -> 200`, r.status === 200);
 }
 
-// cleanup aura drift from this run
+// cleanup: restore the starting aura, then verify it still equals the aura
+// derived from completions (100 + 10/completed - 10/skipped) => no drift.
 await prisma.user.update({ where: { id: alex.user.id }, data: { auraPoints: a0 } });
+{
+  const [row] = await prisma.$queryRaw`
+    SELECT COALESCE(SUM(CASE c.action WHEN 'COMPLETED' THEN 10 WHEN 'SKIPPED' THEN -10 END), 0)::int AS delta
+    FROM "HabitCompletion" c JOIN habits h ON h.id = c."habitId" WHERE h."userId" = ${alex.user.id}`;
+  check("baseline aura equals 100 + completion deltas (run `npm run aura:check -- --fix` if this fails on old seed data)", a0 === 100 + row.delta, `${a0} vs ${100 + row.delta}`);
+}
 console.log(`\n${pass} passed, ${fail} failed`);
 await prisma.$disconnect();
 process.exit(fail ? 1 : 0);
