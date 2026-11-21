@@ -93,27 +93,26 @@ export default function CreateHabitForm({
 
       return (await res.json()) as Habit & { createdAt: string };
     },
-    onSuccess: async (createdHabit) => {
+    onSuccess: (createdHabit) => {
       queryClient.setQueryData<Habit[]>(HABITS_QUERY_KEY, (current) => [
         ...(current ?? []),
         { ...createdHabit, createdAt: new Date(createdHabit.createdAt) },
       ]);
 
-      playCompleteSound();
+      // Confirm first, instantly: nothing below may delay this.
+      toast.success("Habit created!", { description: createdHabit.title });
+      void playCompleteSound();
 
+      // Confetti is decoration: fire it without blocking the navigation.
       if (submitButtonRef.current) {
         const rect = submitButtonRef.current.getBoundingClientRect();
         const x = (rect.left + rect.width / 2) / window.innerWidth;
         const y = (rect.top + rect.height / 2) / window.innerHeight;
-        const confetti = (await import("canvas-confetti")).default;
-        confetti({
-          particleCount: 120,
-          spread: 80,
-          origin: { x, y },
-        });
+        void import("canvas-confetti").then(({ default: confetti }) =>
+          confetti({ particleCount: 120, spread: 80, origin: { x, y } }),
+        );
       }
 
-      toast.success("Habit created!");
       queryClient.invalidateQueries({ queryKey: HABITS_QUERY_KEY });
       router.replace("/");
     },
