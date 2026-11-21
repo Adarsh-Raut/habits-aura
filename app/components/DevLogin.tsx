@@ -8,11 +8,19 @@ const SEED_EMAILS = [
   "avery", "quinn", "harper", "dakota", "emerson", "rowan", "sky",
 ].map((name) => `${name}@example.com`);
 
-/** Local-only quick login (needs DEV_LOGIN=1 and NEXT_PUBLIC_DEV_LOGIN=1). */
+/**
+ * Local-only quick login. Needs NEXT_PUBLIC_DEV_LOGIN=1 and never renders in a
+ * production build (NODE_ENV is inlined, so this is dead code there).
+ */
 export default function DevLogin() {
   const [email, setEmail] = useState(SEED_EMAILS[0]);
 
-  if (process.env.NEXT_PUBLIC_DEV_LOGIN !== "1") return null;
+  if (
+    process.env.NODE_ENV !== "development" ||
+    process.env.NEXT_PUBLIC_DEV_LOGIN !== "1"
+  ) {
+    return null;
+  }
 
   return (
     <div className="fixed bottom-2 right-2 z-50 flex max-w-[calc(100vw-1rem)] items-center gap-2 rounded-xl border border-dashed border-yellow-500/60 bg-black/70 p-3 text-sm text-gray-200">
@@ -23,7 +31,7 @@ export default function DevLogin() {
         id="dev-login-user"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
-        className="select select-bordered select-sm"
+        className="select select-bordered select-sm bg-white text-ink"
       >
         {SEED_EMAILS.map((value) => (
           <option key={value} value={value}>
