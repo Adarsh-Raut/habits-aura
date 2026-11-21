@@ -1,18 +1,30 @@
 import { prisma } from "@/lib/prisma";
-import { getTodayDateKey } from "@/lib/date";
+import { addDaysToKey, getTodayDateKey } from "@/lib/date";
 import { calculateStreaks } from "@/lib/streaks";
 import type { Habit } from "@/app/types/habit";
 
-const habitSelect = {
-  id: true,
-  title: true,
-  createdAt: true,
-  days: true,
-  completions: {
-    select: { dateKey: true, action: true },
-    orderBy: { dateKey: "asc" },
-  },
-} as const;
+/**
+ * The habit list only needs recent history (today's status + current streak),
+ * so completions are limited to this window instead of loading every row ever.
+ * Current streaks longer than the window are capped at roughly this length.
+ */
+const LIST_HISTORY_DAYS = 800;
+
+function habitSelect(timeZone: string) {
+  const since = addDaysToKey(getTodayDateKey(timeZone), -LIST_HISTORY_DAYS);
+
+  return {
+    id: true,
+    title: true,
+    createdAt: true,
+    days: true,
+    completions: {
+      where: { dateKey: { gte: since } },
+      select: { dateKey: true, action: true },
+      orderBy: { dateKey: "asc" },
+    },
+  } as const;
+}
 
 type DbHabitWithCompletions = {
   id: string;
@@ -50,7 +62,7 @@ export async function getHabitsForUser(
 ): Promise<Habit[]> {
   const habits = await prisma.habit.findMany({
     where: { userId },
-    select: habitSelect,
+    select: habitSelect(timeZone),
     orderBy: { createdAt: "asc" },
   });
 
@@ -64,7 +76,7 @@ export async function getHabitForUser(
 ): Promise<Habit | null> {
   const habit = await prisma.habit.findFirst({
     where: { id: habitId, userId },
-    select: habitSelect,
+    select: habitSelect(timeZone),
   });
 
   return habit ? toHabit(habit, timeZone) : null;

@@ -1,5 +1,4 @@
 import Leaderboard from "@/app/components/LeaderBoard";
-import { Prisma } from "@prisma/client";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -16,21 +15,6 @@ type LeaderboardUser = {
   rank: number;
 };
 
-type LeaderboardRowResult = {
-  id: string;
-  name: string | null;
-  avatar: string | null;
-  auraPoints: number;
-  rank: bigint;
-  totalCount: bigint;
-};
-
-type CurrentUserRankResult = {
-  id: string;
-  auraPoints: number;
-  rank: bigint;
-};
-
 export default async function Page({
   searchParams,
 }: {
@@ -44,63 +28,48 @@ export default async function Page({
       : 1;
   const skip = (page - 1) * LEADERBOARD_LIMIT;
 
-  const [leaderboardRows, currentUser] = await Promise.all([
-    prisma.$queryRaw<LeaderboardRowResult[]>(Prisma.sql`
-      WITH ranked_users AS (
-        SELECT
-          id,
-          name,
-          image AS avatar,
-          "auraPoints",
-          ROW_NUMBER() OVER (ORDER BY "auraPoints" DESC, id ASC) AS rank,
-          COUNT(*) OVER () AS "totalCount"
-        FROM "User"
-      )
-      SELECT
-        id,
-        name,
-        avatar,
-        "auraPoints",
-        rank,
-        "totalCount"
-      FROM ranked_users
-      WHERE rank > ${skip} AND rank <= ${skip + LEADERBOARD_LIMIT}
-      ORDER BY rank ASC
-    `),
+  // Same ordering everywhere: most aura first, id as the tie-breaker.
+  const [rows, totalUsers, me] = await Promise.all([
+    prisma.user.findMany({
+      select: { id: true, name: true, image: true, auraPoints: true },
+      orderBy: [{ auraPoints: "desc" }, { id: "asc" }],
+      skip,
+      take: LEADERBOARD_LIMIT,
+    }),
+    prisma.user.count(),
     session?.user?.id
-      ? prisma.$queryRaw<CurrentUserRankResult[]>(Prisma.sql`
-          WITH ranked_users AS (
-            SELECT
-              id,
-              "auraPoints",
-              ROW_NUMBER() OVER (ORDER BY "auraPoints" DESC, id ASC) AS rank
-            FROM "User"
-          )
-          SELECT id, "auraPoints", rank
-          FROM ranked_users
-          WHERE id = ${session.user.id}
-          LIMIT 1
-        `)
-      : Promise.resolve([]),
+      ? prisma.user.findUnique({
+          where: { id: session.user.id },
+          select: { id: true, auraPoints: true },
+        })
+      : null,
   ]);
 
-  const leaderboardData: LeaderboardUser[] = leaderboardRows.map((user) => {
-    const name = user.name ?? "Anonymous";
+  // Rank = 1 + number of users ahead of me (uses the auraPoints index).
+  const usersAhead = me
+    ? await prisma.user.count({
+        where: {
+          OR: [
+            { auraPoints: { gt: me.auraPoints } },
+            { auraPoints: me.auraPoints, id: { lt: me.id } },
+          ],
+        },
+      })
+    : 0;
 
-    return {
-      rank: Number(user.rank),
-      id: user.id,
-      name,
-      auraPoints: user.auraPoints,
-      avatar: user.avatar && user.avatar.trim() !== "" ? user.avatar : null,
-    };
-  });
+  const leaderboardData: LeaderboardUser[] = rows.map((user, index) => ({
+    rank: skip + index + 1,
+    id: user.id,
+    name: user.name ?? "Anonymous",
+    auraPoints: user.auraPoints,
+    avatar: user.image && user.image.trim() !== "" ? user.image : null,
+  }));
 
-  const totalUsers =
-    leaderboardRows.length > 0 ? Number(leaderboardRows[0].totalCount) : 0;
-  const currentUserRank = currentUser[0] ?? null;
+  const currentUserRank = me
+    ? { rank: usersAhead + 1, auraPoints: me.auraPoints }
+    : null;
   const hasPreviousPage = page > 1;
-  const hasNextPage = skip + leaderboardRows.length < totalUsers;
+  const hasNextPage = skip + rows.length < totalUsers;
 
   return (
     <>
@@ -109,7 +78,7 @@ export default async function Page({
           <div className="bg-neutral rounded-xl p-4">
             <div className="text-sm opacity-60">Your Rank</div>
             <div className="text-3xl font-bold text-success">
-              #{Number(currentUserRank.rank)}
+              #{currentUserRank.rank}
             </div>
             <div className="text-sm mt-1">
               Aura Points{" "}
