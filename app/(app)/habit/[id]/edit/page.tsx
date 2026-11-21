@@ -17,7 +17,7 @@ const CreateHabitForm = dynamic(
             <div className="h-5 w-14 bg-base-300 rounded" />
           </div>
 
-          <div className="card bg-neutral shadow-xl p-5 sm:p-6 space-y-6">
+          <div className="card rounded-2xl border border-ash bg-white p-5 sm:p-6 space-y-6">
             {/* Title label */}
             <div>
               <div className="h-6 w-24 bg-base-300 rounded mb-2" />

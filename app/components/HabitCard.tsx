@@ -29,25 +29,25 @@ const HabitCard = memo(function HabitCard({
   const nextHabitDay = getNextHabitDayFromWeekday(habit.days, todayWeekdayKey);
 
   return (
-    <div className={`bg-neutral rounded-xl p-4 flex items-center justify-between transition-all duration-300 ${!isHabitDay ? "opacity-50 grayscale" : ""}`}>
+    <div className={`rounded-2xl border p-4 flex items-center justify-between transition-all duration-300 ${!isHabitDay ? "border-dashed border-ash bg-base-200" : "border-ash bg-white"}`}>
       <div className="flex items-center gap-3 min-w-0">
         <button
           onClick={(event) =>
             onOpenMenu(habit, event.currentTarget)
           }
-          className="btn btn-ghost btn-sm btn-circle"
+          className="btn btn-ghost btn-circle min-h-11 min-w-11"
           aria-label="More Options"
           data-habit-menu-trigger={habit.id}
         >
-          <BsThreeDotsVertical className="w-5 h-5 text-gray-400" />
+          <BsThreeDotsVertical className="h-5 w-5 text-graphite" />
         </button>
 
         <div className="flex min-w-0 flex-col">
         <div className="flex items-center gap-2">
           <span
             className={`relative truncate font-semibold text-base sm:text-lg ${
-              isSkipped ? "text-error" : "text-gray-200"
-            } ${isCompleted ? "opacity-55" : "opacity-100"} transition-opacity duration-300`}
+              isSkipped || isCompleted || !isHabitDay ? "text-graphite" : "text-ink"
+            } transition-colors duration-300`}
           >
             <span
               className={`block truncate transition-transform duration-300 ${
@@ -66,23 +66,23 @@ const HabitCard = memo(function HabitCard({
           </span>
 
           {habit.streak > 0 ? (
-            <span className="flex items-center gap-1 text-xs bg-orange-500/20 text-orange-400 px-2 py-0.5 rounded-full shrink-0">
+            <span className="flex items-center gap-1 text-xs bg-signal/15 font-bold text-signal-text px-2 py-0.5 rounded-full shrink-0">
               <FaFireAlt className="w-3 h-3" />
               {habit.streak}
             </span>
           ) : (
-            <span className="text-xs text-gray-600 flex items-center gap-1 shrink-0">
+            <span className="text-xs text-graphite/50 flex items-center gap-1 shrink-0">
               <IoRocketOutline className="w-3 h-3" />
             </span>
           )}
           {!isHabitDay && nextHabitDay && (
-            <span className="hidden sm:inline text-sm text-gray-400 ml-2 shrink-0 font-medium">
+            <span className="hidden sm:inline text-sm text-graphite ml-2 shrink-0 font-medium">
               Next: {nextHabitDay}
             </span>
           )}
         </div>
         {!isHabitDay && nextHabitDay && (
-          <span className="sm:hidden text-xs text-gray-400 font-medium">
+          <span className="sm:hidden text-xs text-graphite font-medium">
             Next: {nextHabitDay}
           </span>
         )}
@@ -92,14 +92,14 @@ const HabitCard = memo(function HabitCard({
       <button
         onClick={isHabitDay ? () => onToggleHabit(habit) : undefined}
         disabled={!isHabitDay}
-        className={`w-10 h-10 rounded-md border-2 flex items-center justify-center transition-transform ${
+        className={`h-11 w-11 shrink-0 rounded-xl border-2 text-lg font-black flex items-center justify-center transition-transform ${
           isCompleted
-            ? "border-success text-success"
+            ? "border-signal bg-signal text-ink"
             : isSkipped
-              ? "border-error text-error"
+              ? "border-graphite bg-ash text-ink"
               : isHabitDay
-                ? "border-gray-500 cursor-pointer active:scale-95"
-                : "border-gray-700 text-gray-600 cursor-not-allowed"
+                ? "border-graphite/50 bg-white cursor-pointer hover:border-ink active:scale-95"
+                : "border-ash text-ash cursor-not-allowed"
         }`}
         aria-label={!isHabitDay ? `Next: ${nextHabitDay}` : "Toggle Habit"}
       >

@@ -75,14 +75,14 @@ export default async function Page({
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {currentUserRank && (
-          <div className="bg-neutral rounded-xl p-4">
-            <div className="text-sm opacity-60">Your Rank</div>
-            <div className="text-3xl font-bold text-success">
+          <div className="rounded-2xl bg-ink p-5 text-paper">
+            <div className="text-sm text-fog">Your Rank</div>
+            <div className="text-6xl font-black leading-none tracking-[-0.05em] text-signal">
               #{currentUserRank.rank}
             </div>
-            <div className="text-sm mt-1">
+            <div className="mt-2 text-sm text-fog">
               Aura Points{" "}
-              <span className="text-[#ffbf46] font-semibold">
+              <span className="font-black text-paper">
                 {currentUserRank.auraPoints}
               </span>
             </div>

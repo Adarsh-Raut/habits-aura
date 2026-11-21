@@ -7,9 +7,9 @@ import { GoTrophy } from "react-icons/go";
 import { IoStatsChart } from "react-icons/io5";
 
 const menuItems = [
-  { name: "HABITS", icon: FaRegCheckSquare, path: "/" },
-  { name: "LEADERBOARD", icon: GoTrophy, path: "/leaderboard" },
-  { name: "STATS", icon: IoStatsChart, path: "/stats" },
+  { name: "HABITS", label: "Habits", icon: FaRegCheckSquare, path: "/" },
+  { name: "LEADERBOARD", label: "Leaderboard", icon: GoTrophy, path: "/leaderboard" },
+  { name: "STATS", label: "Stats", icon: IoStatsChart, path: "/stats" },
 ];
 
 export default function Sidebar() {
@@ -24,7 +24,7 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className="w-64 h-full bg-[#242933] p-4 flex flex-col">
+    <aside className="flex h-full w-64 flex-col border-r border-ash bg-base-100 p-4">
       <nav className="space-y-2">
         {menuItems.map((item) => (
           <Link
@@ -32,18 +32,21 @@ export default function Sidebar() {
             href={item.path}
             onClick={closeDrawer}
             className={`
-              flex items-center gap-3 px-4 py-3 rounded-lg
+              flex min-h-12 items-center gap-3 rounded-xl px-4 py-3
               ${
                 pathname === item.path
-                  ? "text-gray-100 bg-gray-700/50"
-                  : "text-gray-300 hover:bg-gray-700/30"
+                  ? "bg-ink text-paper"
+                  : "text-graphite hover:bg-ash/60 hover:text-ink"
               }
               transition-colors
             `}
             aria-current={pathname === item.path ? "page" : undefined}
           >
-            <item.icon className="w-5 h-5" aria-hidden="true" />
-            <span className="font-medium tracking-wide">{item.name}</span>
+            <item.icon
+              className={`h-5 w-5 ${pathname === item.path ? "text-signal" : ""}`}
+              aria-hidden="true"
+            />
+            <span className="font-bold">{item.label}</span>
           </Link>
         ))}
       </nav>

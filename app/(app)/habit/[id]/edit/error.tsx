@@ -16,10 +16,10 @@ export default function Error({
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen text-center p-4">
-      <h2 className="text-2xl font-bold text-error mb-2">
+      <h2 className="text-2xl font-black text-ink mb-2">
         Something went wrong!
       </h2>
-      <p className="text-gray-400 mb-4">
+      <p className="text-graphite mb-4">
         We could not load the edit page.
       </p>
       <div className="flex gap-2">

@@ -255,7 +255,7 @@ export default function HabitList({
       <Portal>
         <div
           ref={menuRef}
-          className={`fixed bg-base-200 border border-base-300 rounded-xl p-1 sm:p-2 shadow-xl z-[100] w-auto min-w-[80px] sm:min-w-[140px] max-w-[200px] transition-opacity duration-150 ${
+          className={`fixed bg-white border border-ash rounded-xl p-1 sm:p-2 shadow-xl z-[100] w-auto min-w-[80px] sm:min-w-[140px] max-w-[200px] transition-opacity duration-150 ${
             menuState && activeHabit
               ? "opacity-100 visible"
               : "opacity-0 invisible pointer-events-none"
@@ -269,7 +269,7 @@ export default function HabitList({
             <>
               <button
                 type="button"
-                className="w-full flex items-center gap-3 px-3 py-2 text-gray-200 hover:bg-base-300 rounded-lg transition-colors"
+                className="w-full flex items-center gap-3 px-3 py-2 text-ink hover:bg-base-200 rounded-lg transition-colors min-h-11 font-semibold"
                 onClick={() => openEditHabit(activeHabit)}
               >
                 <IoPencil className="w-5 h-5 shrink-0" />

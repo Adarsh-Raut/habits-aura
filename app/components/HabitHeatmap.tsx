@@ -27,13 +27,11 @@ const fullDateFormatter = new Intl.DateTimeFormat("en-US", {
   timeZone: "UTC",
 });
 
-const GITHUB_DARK_THEME = [
-  "#161b22",
-  "#0e4429",
-  "#006d32",
-  "#26a641",
-  "#39d353",
-];
+// Empty -> full, in the brand's signal orange.
+const SIGNAL_SCALE = ["#ecece7", "#ffd9cc", "#ffb199", "#ff7a50", "#ff4d1a"];
+
+// Module-level so the object identity is stable across renders.
+const HEATMAP_THEME = { light: SIGNAL_SCALE, dark: SIGNAL_SCALE };
 
 const HabitHeatmap = memo(function HabitHeatmap({
   calendar,
@@ -65,8 +63,8 @@ const HabitHeatmap = memo(function HabitHeatmap({
   return (
     <ActivityCalendar
       data={data}
-      theme={{ dark: GITHUB_DARK_THEME }}
-      colorScheme="dark"
+      theme={HEATMAP_THEME}
+      colorScheme="light"
       weekStart={0}
       showWeekdayLabels={["mon", "wed", "fri"]}
       blockSize={12}

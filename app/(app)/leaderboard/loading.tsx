@@ -2,14 +2,14 @@ export default function LoadingLeaderboard() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-pulse">
       {/* Your Rank Card */}
-      <div className="bg-neutral rounded-xl p-4">
+      <div className="rounded-2xl border border-ash bg-white p-4">
         <div className="h-4 w-24 bg-base-300 rounded mb-1" />
         <div className="h-10 w-20 bg-base-300 rounded" />
         <div className="h-4 w-32 bg-base-300 rounded mt-2" />
       </div>
 
       {/* Leaderboard - spans 2 columns */}
-      <div className="md:col-span-2 bg-neutral rounded-xl shadow p-4 sm:p-6">
+      <div className="md:col-span-2 rounded-2xl border border-ash bg-white shadow p-4 sm:p-6">
         {/* Title */}
         <div className="h-7 w-32 bg-base-300 rounded mb-4" />
 

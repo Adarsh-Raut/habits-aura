@@ -24,7 +24,7 @@ export default function Avatar({ src, name, size = 32 }: AvatarProps) {
 
   return (
     <div
-      className="rounded-full overflow-hidden bg-base-300 flex items-center justify-center relative"
+      className="rounded-full overflow-hidden bg-ink flex items-center justify-center relative"
       style={{ width: size, height: size }}
     >
       {showImage ? (
@@ -41,7 +41,7 @@ export default function Avatar({ src, name, size = 32 }: AvatarProps) {
         />
       ) : (
         <span
-          className="font-medium text-white/90"
+          className="font-bold text-paper"
           style={{ fontSize: Math.max(12, Math.round(size * 0.38)) }}
           aria-hidden="true"
         >

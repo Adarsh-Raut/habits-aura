@@ -1,6 +1,6 @@
 "use client";
 
-import HabitHeatmap from "./HabitHeatmap";
+import dynamic from "next/dynamic";
 import EmptyState from "./EmptyState";
 import { FaFireAlt, FaTrophy } from "react-icons/fa";
 import { useEffect, useMemo, useState } from "react";
@@ -28,6 +28,16 @@ type Props = {
   todayKey: string;
   initialStats?: HabitStats | null;
 };
+
+// The calendar library wraps every day cell in a lazily-loaded tooltip
+// Suspense boundary. Server-rendering more than ~50 of them makes React's
+// hydration exceed its nested-update limit ("Maximum update depth exceeded"),
+// which breaks the page for any habit with a few weeks of history. Rendering
+// it on the client only avoids hydrating those boundaries at all.
+const HabitHeatmap = dynamic(() => import("./HabitHeatmap"), {
+  ssr: false,
+  loading: () => <div className="skeleton h-48 w-full rounded-lg" />,
+});
 
 export default function StatsView({ habits, todayKey, initialStats }: Props) {
   const [selectedHabitId, setSelectedHabitId] = useState(habits[0]?.id ?? null);
@@ -75,13 +85,16 @@ export default function StatsView({ habits, todayKey, initialStats }: Props) {
   }
 
   return (
-    <div className="space-y-6 text-gray-200">
+    <div className="space-y-6 text-ink">
       {/* Selector */}
-      <div className="bg-neutral rounded-xl p-4 max-w-xl">
-        <label className="block text-sm mb-2 opacity-60">Select Habit</label>
+      <div className="max-w-xl rounded-2xl border border-ash bg-white p-4">
+        <label htmlFor="stats-habit" className="mb-2 block text-sm font-semibold text-graphite">
+          Select Habit
+        </label>
 
         <select
-          className="bg-[#242933] select select-bordered w-full"
+          id="stats-habit"
+          className="select select-bordered w-full bg-white font-semibold"
           value={selectedHabitId ?? ""}
           onChange={(e) => setSelectedHabitId(e.target.value)}
         >
@@ -102,9 +115,9 @@ export default function StatsView({ habits, todayKey, initialStats }: Props) {
               value={
                 selectedStats?.currentStreak ?? selectedHabit.currentStreak
               }
-              icon={<FaFireAlt className="text-orange-500" />}
+              icon={<FaFireAlt className="h-7 w-7 text-signal" aria-hidden="true" />}
               subtitle="Days in a row"
-              success
+              highlight
             />
 
             <StatCard
@@ -112,14 +125,14 @@ export default function StatsView({ habits, todayKey, initialStats }: Props) {
               value={
                 selectedStats?.longestStreak ?? selectedHabit.longestStreak
               }
-              icon={<FaTrophy className="text-warning" />}
+              icon={<FaTrophy className="h-6 w-6 text-ink" aria-hidden="true" />}
               subtitle="Best consistency"
             />
           </div>
 
-          <div className="bg-neutral rounded-xl p-4">
-            <h2 className="text-lg font-semibold mb-1">Yearly Consistency</h2>
-            <p className="text-sm opacity-60 mb-4">Calendar activity map</p>
+          <div className="rounded-2xl border border-ash bg-white p-4 sm:p-5">
+            <h2 className="mb-1 text-lg font-black tracking-tight">Yearly Consistency</h2>
+            <p className="mb-4 text-sm text-graphite">Calendar activity map</p>
 
             {isLoadingStats ? (
               <div className="skeleton h-48 w-full rounded-lg" />
@@ -130,7 +143,7 @@ export default function StatsView({ habits, todayKey, initialStats }: Props) {
                 todayKey={todayKey}
               />
             ) : (
-              <p className="text-sm text-gray-400">No stats available yet.</p>
+              <p className="text-sm text-graphite">No stats available yet.</p>
             )}
           </div>
         </>
@@ -145,26 +158,34 @@ function StatCard({
   value,
   icon,
   subtitle,
-  success,
+  highlight,
 }: {
   title: string;
   value: number;
   icon: React.ReactNode;
   subtitle: string;
-  success?: boolean;
+  highlight?: boolean;
 }) {
   return (
-    <div className="bg-neutral rounded-xl p-4">
-      <div className="text-sm opacity-60">{title}</div>
+    <div
+      className={`rounded-2xl p-5 ${
+        highlight ? "bg-ink text-paper" : "border border-ash bg-white text-ink"
+      }`}
+    >
+      <div className={`text-sm ${highlight ? "text-fog" : "text-graphite"}`}>
+        {title}
+      </div>
       <div
-        className={`text-3xl font-bold flex items-center gap-2 ${
-          success ? "text-success" : ""
+        className={`flex items-center gap-3 text-6xl font-black leading-none tracking-[-0.05em] tabular-nums ${
+          highlight ? "text-signal" : ""
         }`}
       >
         {icon}
         {value}
       </div>
-      <div className="text-sm opacity-60">{subtitle}</div>
+      <div className={`mt-1 text-sm ${highlight ? "text-fog" : "text-graphite"}`}>
+        {subtitle}
+      </div>
     </div>
   );
 }

@@ -18,12 +18,6 @@ type LeaderboardProps = {
   hasNextPage: boolean;
 };
 
-const rankMedals: Record<number, string> = {
-  1: "🥇",
-  2: "🥈",
-  3: "🥉",
-};
-
 function LeaderboardRow({
   player,
   isYou,
@@ -31,11 +25,13 @@ function LeaderboardRow({
   player: LeaderboardPlayer;
   isYou: boolean;
 }) {
-  const rankDisplay = rankMedals[player.rank] ?? player.rank;
-
   return (
-    <tr className={isYou ? "bg-success/20 font-semibold" : ""}>
-      <td className="text-lg">{rankDisplay}</td>
+    <tr className={isYou ? "bg-signal/15 font-semibold" : ""}>
+      <td
+        className={`text-xl font-black tabular-nums tracking-tight ${player.rank <= 3 ? "text-signal-text" : ""}`}
+      >
+        {player.rank}
+      </td>
 
       <td className="w-full max-w-0">
         <div className="flex items-center gap-3 min-w-0">
@@ -43,12 +39,12 @@ function LeaderboardRow({
 
           <div className="truncate">
             <span className="font-medium">{player.name}</span>
-            {isYou && <span className="badge badge-success ml-2">You</span>}
+            {isYou && <span className="badge ml-2 border-ink bg-ink font-bold text-paper">You</span>}
           </div>
         </div>
       </td>
 
-      <td className="whitespace-nowrap text-right font-medium text-[#ffbf46]">
+      <td className="whitespace-nowrap text-right font-black tabular-nums">
         {player.auraPoints}
       </td>
     </tr>
@@ -63,8 +59,8 @@ const Leaderboard = ({
   hasNextPage,
 }: LeaderboardProps) => {
   return (
-    <div className="bg-neutral rounded-xl shadow p-4 sm:p-6">
-      <h2 className="text-lg sm:text-2xl font-semibold mb-4">Leaderboard</h2>
+    <div className="rounded-2xl border border-ash bg-white p-4 sm:p-6">
+      <h2 className="mb-4 text-lg font-black tracking-tight sm:text-2xl">Leaderboard</h2>
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm opacity-60">50 users per page</p>
 
@@ -74,7 +70,7 @@ const Leaderboard = ({
               hasPreviousPage ? `/leaderboard?page=${page - 1}` : "/leaderboard"
             }
             aria-disabled={!hasPreviousPage}
-            className={`btn btn-sm gap-2 ${
+            className={`btn min-h-11 gap-2 px-4 ${
               hasPreviousPage
                 ? "btn-ghost"
                 : "btn-ghost pointer-events-none opacity-40"
@@ -91,7 +87,7 @@ const Leaderboard = ({
           <Link
             href={`/leaderboard?page=${page + 1}`}
             aria-disabled={!hasNextPage}
-            className={`btn btn-sm gap-2 ${
+            className={`btn min-h-11 gap-2 px-4 ${
               hasNextPage
                 ? "btn-ghost"
                 : "btn-ghost pointer-events-none opacity-40"

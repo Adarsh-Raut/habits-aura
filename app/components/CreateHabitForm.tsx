@@ -186,28 +186,32 @@ export default function CreateHabitForm({
         </Link>
 
         <div
-          className={`card bg-neutral shadow-xl p-5 sm:p-6 space-y-6 transition ${
+          className={`card rounded-2xl border border-ash bg-white p-5 sm:p-6 space-y-6 transition ${
             loading ? "opacity-70" : ""
           }`}
         >
           <div>
-            <label className="text-base sm:text-lg font-medium mb-2 block">
+            <label
+              htmlFor="habit-title"
+              className="text-base sm:text-lg font-extrabold mb-2 block"
+            >
               {isEditing ? "Edit habit" : "My new habit"}
             </label>
 
             <input
+              id="habit-title"
               autoFocus
               disabled={loading}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Type your habit"
-              className="input input-bordered input-color w-full"
+              className="input input-bordered input-color h-12 w-full text-base"
             />
           </div>
 
           {!isEditing && (
             <div>
-              <p className="text-sm text-gray-400 mb-2">Quick suggestions</p>
+              <p className="mb-2 text-sm font-semibold text-graphite">Quick suggestions</p>
               <div className="flex flex-wrap gap-2">
                 {HABIT_SUGGESTIONS.map((h) => (
                   <button
@@ -215,7 +219,7 @@ export default function CreateHabitForm({
                     type="button"
                     disabled={loading}
                     onClick={() => setTitle(h)}
-                    className="badge badge-base-200 badge-lg h-9 cursor-pointer"
+                    className="badge badge-base-200 badge-lg h-11 cursor-pointer font-semibold hover:border-ink"
                     aria-label="Suggestion"
                   >
                     {h}
@@ -226,21 +230,21 @@ export default function CreateHabitForm({
           )}
 
           <div>
-            <label className="text-sm sm:text-base font-medium mb-3 block">
+            <label className="text-sm sm:text-base font-extrabold mb-3 block">
               Days
             </label>
 
             <div className="grid grid-cols-7 gap-2 text-center">
               {Object.entries(DAY_MAP).map(([day, label]) => (
-                <label key={day} className="flex flex-col items-center gap-1">
+                <label key={day} className="flex cursor-pointer flex-col items-center gap-1 py-1">
                   <input
                     type="checkbox"
                     checked={days.includes(day)}
                     disabled={loading}
                     onChange={() => toggleDay(day)}
-                    className="checkbox checkbox-sm sm:checkbox-md"
+                    className="checkbox checkbox-primary checkbox-md"
                   />
-                  <span className="text-xs sm:text-sm text-gray-300">
+                  <span className="text-xs font-semibold text-graphite sm:text-sm">
                     {label}
                   </span>
                 </label>
@@ -252,7 +256,7 @@ export default function CreateHabitForm({
             ref={submitButtonRef}
             type="submit"
             disabled={loading}
-            className="btn bg-[#05c269] hover:bg-[#05a45a] text-white btn-block rounded-full"
+            className="btn btn-primary btn-block h-12 text-base font-extrabold"
             aria-label={isEditing ? "Save Changes" : "Create Habit"}
           >
             {loading

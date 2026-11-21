@@ -20,12 +20,12 @@ export default async function AppLayout({
   return (
     <QueryProvider>
       <TimezoneSync />
-      <div className="drawer min-h-screen bg-[#242933] lg:drawer-open">
+      <div className="drawer min-h-screen bg-base-100 lg:drawer-open">
         <input id="sidebar-drawer" type="checkbox" className="drawer-toggle" />
 
         <div className="drawer-content relative z-0 flex flex-col">
           <Navbar user={session.user} />
-          <main className="flex-1 overflow-y-auto p-4">{children}</main>
+          <main className="flex-1 overflow-y-auto p-4 sm:p-6">{children}</main>
         </div>
 
         <div className="drawer-side">
