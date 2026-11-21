@@ -116,12 +116,24 @@ async function run(tz) {
   check("edit: renamed in list", true);
   check("edit: completion kept (✓)", (await page.locator('button[aria-label="Toggle Habit"]').first().textContent()).includes("✓"));
 
+  // regression: a habit with ~10 weeks of history used to crash the stats page
+  // (the heatmap's per-cell Suspense boundaries broke hydration past ~50 cells)
+  const habitRow = await prisma.habit.findFirst({ where: { userId: user.id }, select: { id: true } });
+  const history = Array.from({ length: 70 }, (_, i) => {
+    const d = new Date(keyIn(tz) + "T00:00:00Z");
+    d.setUTCDate(d.getUTCDate() - (i + 1));
+    return { habitId: habitRow.id, dateKey: d.toISOString().slice(0, 10), action: "COMPLETED" };
+  });
+  await prisma.habitCompletion.createMany({ data: history });
+
   // stats page heatmap
   await page.goto(BASE + "/stats");
   await page.waitForSelector("svg rect", { timeout: 8000 });
   await page.waitForTimeout(800);
   const text = await page.locator("body").innerText();
   check("stats: shows habit + streak 1", /Renamed habit/.test(text) && /1/.test(text));
+  check("stats: 70-day history renders without errors", errors.length === 0 && (await page.locator("svg rect").count()) > 70, errors.join("|"));
+  await prisma.habitCompletion.deleteMany({ where: { habitId: habitRow.id, dateKey: { not: keyIn(tz) } } });
   check("stats: heatmap has today's completed cell", (await page.locator(`rect[data-date="${keyIn(tz)}"]`).count()) > 0);
   await page.screenshot({ path: `${SHOTS}/${tz.replace("/", "_")}-3-stats.png` });
 

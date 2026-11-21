@@ -43,6 +43,20 @@ for (const [w, h] of [[1280, 800], [375, 812]]) {
   check("demo: skip = -10 vs untouched", (await auraText()) === "1240", await auraText());
   await box.click();
   check("demo: undo returns to start", (await auraText()) === "1250", await auraText());
+  // the giant streak number follows the habits (46 base, +1 once anything is done today)
+  const streak = async () => (await page.locator("span.sr-only", { hasText: "day streak" }).innerText()).replace(/\D/g, "");
+  await page.waitForTimeout(1800);
+  check("hero streak counts up to 47", (await streak()) === "47", await streak());
+  const run = page.getByRole("button", { name: /Morning run/ });
+  await run.click();
+  await page.waitForTimeout(300);
+  check("hero streak drops to 46 when nothing is done today", (await streak()) === "46", await streak());
+  await run.click(); // skipped -> none: still nothing done
+  await page.waitForTimeout(300);
+  check("hero streak stays 46 while nothing is done", (await streak()) === "46", await streak());
+  await run.click(); // none -> done again
+  await page.waitForTimeout(300);
+  check("hero streak back to 47 once done again", (await streak()) === "47", await streak());
   const hit = await box.boundingBox();
   check("demo tap target >= 44px", hit.width >= 44 && hit.height >= 44, JSON.stringify(hit));
 
@@ -88,7 +102,7 @@ for (const [w, h] of [[1280, 800], [375, 812]]) {
   await page.goto(BASE + "/signin");
   const opacity = await page.locator("#faq h2").evaluate((e) => getComputedStyle(e.parentElement).opacity);
   check("no JS: below-the-fold content is visible", opacity === "1", opacity);
-  check("no JS: headline and sections are in the HTML", (await page.locator("#features h3").count()) === 3);
+  check("no JS: headline and sections are in the HTML", (await page.locator("#features h2").count()) === 3);
   await ctx.close();
 }
 

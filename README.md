@@ -24,7 +24,7 @@ Habits Aura is a gamified habit-tracking web application built with **Next.js 14
 - 💡 Habit suggestions in create form
 - 👤 User profile dropdown with avatar
 - 📱 Fully responsive with mobile drawer navigation
-- 🌙 Forced dark theme (DaisyUI)
+- 🎨 Paper, ink and one signal colour (DaisyUI light theme + Figtree)
 - ⚡ Hybrid RSC/RCC for fast loads and interactivity
 
 ---
@@ -38,7 +38,7 @@ Habits Aura is a gamified habit-tracking web application built with **Next.js 14
 | Auth          | NextAuth v4 (Google OAuth)          |
 | Database      | PostgreSQL (Neon)                   |
 | ORM           | Prisma                              |
-| Styling       | TailwindCSS + DaisyUI               |
+| Styling       | TailwindCSS + DaisyUI (custom `habits` theme) |
 | Animation     | Framer Motion (LazyMotion)          |
 | Icons         | react-icons                         |
 | Notifications | sonner (toast notifications)        |
@@ -404,6 +404,7 @@ npm run dev
 npm test                                  # unit tests
 node tests/e2e/api.e2e.mjs                # API tests (needs dev server + local DB)
 npx playwright install chromium && node tests/e2e/browser.e2e.mjs   # browser tests (needs DEV_LOGIN=1)
+node tests/e2e/responsive.e2e.mjs         # every screen at 375/768/1280px + axe accessibility
 node tests/e2e/landing.e2e.mjs            # landing page tests
 ```
 
