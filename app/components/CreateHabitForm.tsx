@@ -215,7 +215,7 @@ export default function CreateHabitForm({
                     type="button"
                     disabled={loading}
                     onClick={() => setTitle(h)}
-                    className="badge badge-base-200 badge-lg cursor-pointer"
+                    className="badge badge-base-200 badge-lg h-9 cursor-pointer"
                     aria-label="Suggestion"
                   >
                     {h}

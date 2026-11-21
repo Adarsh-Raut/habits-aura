@@ -37,7 +37,7 @@ function LeaderboardRow({
     <tr className={isYou ? "bg-success/20 font-semibold" : ""}>
       <td className="text-lg">{rankDisplay}</td>
 
-      <td>
+      <td className="w-full max-w-0">
         <div className="flex items-center gap-3 min-w-0">
           <Avatar src={player.avatar} name={player.name} size={32} />
 
@@ -48,7 +48,9 @@ function LeaderboardRow({
         </div>
       </td>
 
-      <td className="font-medium text-[#ffbf46]">{player.auraPoints}</td>
+      <td className="whitespace-nowrap text-right font-medium text-[#ffbf46]">
+        {player.auraPoints}
+      </td>
     </tr>
   );
 }
@@ -102,12 +104,14 @@ const Leaderboard = ({
       </div>
 
       <div className="overflow-x-auto">
-        <table className="table w-full">
+        <table className="table table-sm sm:table-md w-full">
           <thead className="text-xs sm:text-sm">
             <tr>
               <th>#</th>
               <th>Player</th>
-              <th>Aura Points</th>
+              <th className="whitespace-nowrap text-right">
+                Aura<span className="hidden sm:inline"> Points</span>
+              </th>
             </tr>
           </thead>
 

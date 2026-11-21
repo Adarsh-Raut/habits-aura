@@ -42,6 +42,7 @@ const HabitCard = memo(function HabitCard({
           <BsThreeDotsVertical className="w-5 h-5 text-gray-400" />
         </button>
 
+        <div className="flex min-w-0 flex-col">
         <div className="flex items-center gap-2">
           <span
             className={`relative truncate font-semibold text-base sm:text-lg ${
@@ -75,10 +76,16 @@ const HabitCard = memo(function HabitCard({
             </span>
           )}
           {!isHabitDay && nextHabitDay && (
-            <span className="text-sm text-gray-400 ml-2 shrink-0 font-medium">
+            <span className="hidden sm:inline text-sm text-gray-400 ml-2 shrink-0 font-medium">
               Next: {nextHabitDay}
             </span>
           )}
+        </div>
+        {!isHabitDay && nextHabitDay && (
+          <span className="sm:hidden text-xs text-gray-400 font-medium">
+            Next: {nextHabitDay}
+          </span>
+        )}
         </div>
       </div>
 
