@@ -3,10 +3,11 @@
 //   NODE_PATH=<dir>/node_modules node tests/e2e/browser.e2e.mjs
 import { chromium } from "playwright";
 import { PrismaClient } from "@prisma/client";
+import os from "node:os";
 
 const DB = "postgresql://habits:habits@localhost:5440/habits_aura";
 const BASE = "http://localhost:3000";
-const SHOTS = process.env.SHOTS_DIR || ".";
+const SHOTS = process.env.SHOTS_DIR || os.tmpdir();
 const prisma = new PrismaClient({ datasources: { db: { url: DB } } });
 let pass = 0, fail = 0;
 const check = (name, cond, extra = "") => {
