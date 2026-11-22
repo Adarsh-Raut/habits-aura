@@ -35,7 +35,7 @@ export const metadata: Metadata = {
     "gamification",
     "aura points",
   ],
-  authors: [{ name: "Adarsh Raut" }],
+  authors: [{ name: "Adarsh Raut", url: "https://adarshraut.vercel.app" }],
   creator: "Adarsh Raut",
   openGraph: {
     type: "website",

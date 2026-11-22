@@ -284,7 +284,15 @@ export default function LandingPage() {
           <Logo className="h-[22px] w-[22px]" />
           Habits Aura
         </div>
-        <p>Build habits. Grow your aura.</p>
+        <p>
+          Build habits. Grow your aura. Made by{" "}
+          <a
+            href="https://adarshraut.vercel.app"
+            className="font-semibold text-ink underline underline-offset-4 hover:text-signal-text"
+          >
+            Adarsh Raut
+          </a>
+        </p>
       </footer>
     </div>
   );

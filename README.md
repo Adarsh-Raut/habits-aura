@@ -393,8 +393,10 @@ npm run dev
 
 # 👨‍💻 Author
 
-Adarsh Raut  
-Full Stack Developer (MERN + Next.js + Prisma)
+[Adarsh Raut](https://adarshraut.vercel.app)  
+Software engineer and full stack developer (MERN + Next.js + Prisma), based in Pune, India
+
+[Portfolio](https://adarshraut.vercel.app) · [LinkedIn](https://www.linkedin.com/in/adarsh-raut/) · [GitHub](https://github.com/Adarsh-Raut)
 
 ---
 
@@ -428,4 +430,6 @@ Streaks are computed from completions, not stored.
 
 ---
 
-Built by [Adarsh Raut](https://adarshraut.vercel.app)
+Built by [Adarsh Raut](https://adarshraut.vercel.app), software engineer and full stack developer in Pune · [LinkedIn](https://www.linkedin.com/in/adarsh-raut/) · [GitHub](https://github.com/Adarsh-Raut)
+
+Read how it was built: [How I built Habits Aura](https://adarshraut.vercel.app/blog/how-i-built-habits-aura)
