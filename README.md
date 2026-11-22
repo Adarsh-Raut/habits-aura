@@ -12,15 +12,7 @@ Check habits off, keep your streak alive, and watch your aura climb the leaderbo
 | --- | --- |
 | ![Habits list](docs/screenshots/home-desktop.png) | ![Stats page with yearly heatmap](docs/screenshots/stats-desktop.png) |
 
-| Leaderboard | Create a habit |
-| --- | --- |
-| ![Leaderboard](docs/screenshots/leaderboard-desktop.png) | ![Create habit form](docs/screenshots/create-desktop.png) |
-
-On a phone:
-
-| Landing | Habits | Stats | Leaderboard |
-| --- | --- | --- | --- |
-| ![Landing, mobile](docs/screenshots/landing-mobile.png) | ![Habits, mobile](docs/screenshots/home-mobile.png) | ![Stats, mobile](docs/screenshots/stats-mobile.png) | ![Leaderboard, mobile](docs/screenshots/leaderboard-mobile.png) |
+![Leaderboard](docs/screenshots/leaderboard-desktop.png)
 
 *Screenshots use the local demo data from `npm run seed`.*
 
