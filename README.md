@@ -4,15 +4,15 @@
 
 Habits Aura is a gamified habit-tracking web application built with **Next.js 14 (App Router)**, **Prisma**, **PostgreSQL (Neon)**, and **NextAuth (Google OAuth)**.
 
-![Habits Aura landing page](docs/screenshots/landing-desktop.png)
+![Habits Aura landing page](docs/screenshots/landing-desktop.webp)
 
 Check habits off, keep your streak alive, and watch your aura climb the leaderboard.
 
 | Habits | Stats |
 | --- | --- |
-| ![Habits list](docs/screenshots/home-desktop.png) | ![Stats page with yearly heatmap](docs/screenshots/stats-desktop.png) |
+| ![Habits list](docs/screenshots/home-desktop.webp) | ![Stats page with yearly heatmap](docs/screenshots/stats-desktop.webp) |
 
-![Leaderboard](docs/screenshots/leaderboard-desktop.png)
+![Leaderboard](docs/screenshots/leaderboard-desktop.webp)
 
 *Screenshots use the local demo data from `npm run seed`.*
 
