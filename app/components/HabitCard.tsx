@@ -10,7 +10,7 @@ import { getNextHabitDayFromWeekday } from "@/lib/date";
 type HabitCardProps = {
   habit: Habit;
   todayWeekdayKey: string;
-  onToggleHabit: (habit: Habit) => void;
+  onToggleHabit: (habit: Habit, button: HTMLButtonElement) => void;
   onOpenMenu: (
     habit: Habit,
     trigger: HTMLButtonElement,
@@ -90,7 +90,7 @@ const HabitCard = memo(function HabitCard({
       </div>
 
       <button
-        onClick={isHabitDay ? () => onToggleHabit(habit) : undefined}
+        onClick={isHabitDay ? (event) => onToggleHabit(habit, event.currentTarget) : undefined}
         disabled={!isHabitDay}
         className={`h-11 w-11 shrink-0 rounded-xl border-2 text-lg font-black flex items-center justify-center transition-transform ${
           isCompleted

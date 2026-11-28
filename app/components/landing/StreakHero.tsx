@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
+import { celebrateCompletion, completionOrigin } from "@/lib/completion-feedback";
 import { FaBolt } from "react-icons/fa";
 import { IoCheckmark, IoClose } from "react-icons/io5";
 
@@ -139,7 +140,12 @@ export function HabitDemoCard() {
               </div>
               <button
                 type="button"
-                onClick={() => toggle(habit.id)}
+                onClick={(event) => {
+                  toggle(habit.id);
+                  if (habit.status === "NONE") {
+                    celebrateCompletion(completionOrigin(event.currentTarget));
+                  }
+                }}
                 aria-label={`${habit.title}: ${isDone ? "completed" : isSkip ? "skipped" : "not done"}. Click to change`}
                 className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-[11px] border-2 transition-transform duration-150 active:scale-90 ${
                   isDone

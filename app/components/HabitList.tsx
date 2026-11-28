@@ -7,13 +7,19 @@ import { toast } from "sonner";
 import HabitCard from "./HabitCard";
 import EmptyState from "./EmptyState";
 import type { Habit } from "@/app/types/habit";
-import { playCompleteSound, preloadCompleteSound } from "@/lib/audio";
+import { preloadCompleteSound } from "@/lib/audio";
+import { celebrateCompletion, completionOrigin } from "@/lib/completion-feedback";
 import Portal from "./Portal";
 import { useRouter } from "next/navigation";
 
 type HabitListProps = {
   initialHabits: Habit[];
   todayWeekdayKey: string;
+};
+
+type ToggleInput = {
+  habit: Habit;
+  origin: ReturnType<typeof completionOrigin>;
 };
 
 type MenuState = {
@@ -114,15 +120,15 @@ export default function HabitList({
   }, [menuState]);
 
   const toggleMutation = useMutation({
-    mutationFn: async (habit: Habit) => {
+    mutationFn: async ({ habit }: ToggleInput) => {
       const res = await fetch(`/api/habits/${habit.id}`, { method: "PATCH" });
 
       if (!res.ok) throw new Error("Failed to update");
 
-      const data = (await res.json()) as { currentStreak: number };
+      const data = (await res.json()) as { currentStreak: number; status: Habit["status"] };
       return data;
     },
-    onMutate: async (habit: Habit) => {
+    onMutate: async ({ habit }) => {
       await queryClient.cancelQueries({ queryKey: HABITS_QUERY_KEY });
 
       const previousHabits = queryClient.getQueryData<Habit[]>(HABITS_QUERY_KEY);
@@ -135,10 +141,6 @@ export default function HabitList({
         newStatus,
       );
 
-      if (previousStatus !== "COMPLETED" && newStatus === "COMPLETED") {
-        playCompleteSound();
-      }
-
       queryClient.setQueryData<Habit[]>(HABITS_QUERY_KEY, (current) =>
         (current ?? []).map((item) =>
           item.id === habit.id
@@ -149,13 +151,16 @@ export default function HabitList({
 
       return { previousHabits };
     },
-    onError: (_error, _habit, context) => {
+    onSuccess: ({ status }, { origin }) => {
+      if (status === "COMPLETED") celebrateCompletion(origin);
+    },
+    onError: (_error, _input, context) => {
       if (context?.previousHabits) {
         queryClient.setQueryData(HABITS_QUERY_KEY, context.previousHabits);
       }
       toast.error("Failed to update habit. Please try again.");
     },
-    onSettled: (_data, _error, habit) => {
+    onSettled: (_data, _error, { habit }) => {
       queryClient.invalidateQueries({ queryKey: HABITS_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: ["habitStats", habit.id] });
     },
@@ -218,7 +223,10 @@ export default function HabitList({
   setMenuState({ habitId: habit.id, top, left });
 }, []);
 
-  const { mutate: toggleHabit } = toggleMutation;
+  const { mutate: toggle } = toggleMutation;
+  const toggleHabit = useCallback((habit: Habit, button: HTMLButtonElement) => {
+    toggle({ habit, origin: completionOrigin(button) });
+  }, [toggle]);
 
   const { mutate: removeHabit } = deleteMutation;
 

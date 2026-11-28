@@ -90,8 +90,11 @@ for (let n = 1; n <= 4; n++) {
   }
 }
 
+await page.locator("canvas").waitFor({ state: "detached", timeout: 6000 });
 const endedBeforeToggle = await page.evaluate(() => window.__ended);
 await page.getByRole("button", { name: "Toggle Habit" }).first().click();
+await page.locator("canvas").waitFor({ state: "visible", timeout: 3000 });
+check("checking off a habit shows confetti", true);
 await page.waitForFunction((count) => window.__ended > count, endedBeforeToggle, { timeout: 3000 }).catch(() => {});
 check("checking off a habit plays the entire sound", (await page.evaluate(() => window.__ended)) === endedBeforeToggle + 1);
 check("sound needs no separate MP3 request or download", audioRequests === 0 && downloads === 0);

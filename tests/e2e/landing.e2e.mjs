@@ -9,10 +9,22 @@ const check = (name, cond, extra = "") => {
 };
 const browser = await chromium.launch();
 
+async function trackSounds(page) {
+  await page.addInitScript(() => {
+    window.__completionSounds = 0;
+    const start = AudioBufferSourceNode.prototype.start;
+    AudioBufferSourceNode.prototype.start = function (...args) {
+      window.__completionSounds++;
+      return start.apply(this, args);
+    };
+  });
+}
+
 for (const [w, h] of [[1280, 800], [375, 812]]) {
   console.log(`\n=== ${w}px ===`);
   const ctx = await browser.newContext({ viewport: { width: w, height: h } });
   const page = await ctx.newPage();
+  await trackSounds(page);
   const errors = [];
   page.on("pageerror", (e) => errors.push(String(e)));
   page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
@@ -39,10 +51,14 @@ for (const [w, h] of [[1280, 800], [375, 812]]) {
   const box = page.getByRole("button", { name: /Read 20 pages/ });
   await box.click();
   check("demo: complete = +10", (await auraText()) === "1260", await auraText());
+  await page.waitForFunction(() => window.__completionSounds === 1, undefined, { timeout: 3000 });
+  await page.locator("canvas").waitFor({ state: "visible", timeout: 3000 });
+  check("demo: completion plays sound and confetti", true);
   await box.click();
   check("demo: skip = -10 vs untouched", (await auraText()) === "1240", await auraText());
   await box.click();
   check("demo: undo returns to start", (await auraText()) === "1250", await auraText());
+  check("demo: skip and undo are silent", await page.evaluate(() => window.__completionSounds === 1));
   // the giant streak number follows the habits (46 base, +1 once anything is done today)
   const streak = async () => (await page.locator("span.sr-only", { hasText: "day streak" }).innerText()).replace(/\D/g, "");
   await page.waitForTimeout(1800);
@@ -89,9 +105,13 @@ for (const [w, h] of [[1280, 800], [375, 812]]) {
 {
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 }, reducedMotion: "reduce" });
   const page = await ctx.newPage();
+  await trackSounds(page);
   await page.goto(BASE + "/signin");
   const opacity = await page.locator("#faq h2").evaluate((e) => getComputedStyle(e.parentElement).opacity);
   check("reduced motion: below-the-fold content visible immediately", opacity === "1", opacity);
+  await page.getByRole("button", { name: /Read 20 pages/ }).click();
+  await page.waitForFunction(() => window.__completionSounds === 1, undefined, { timeout: 3000 });
+  check("reduced motion: completion plays sound without confetti", await page.locator("canvas").count() === 0);
   await ctx.close();
 }
 
