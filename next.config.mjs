@@ -21,6 +21,15 @@ const nextConfig = {
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
+  webpack(config) {
+    config.module.rules.push({
+      test: /completed-sound\.mp3$/,
+      type: "asset",
+      parser: { dataUrlCondition: () => true },
+      generator: { dataUrl: { mimetype: "audio/mpeg" } },
+    });
+    return config;
+  },
   experimental: {
     optimizePackageImports: ["react-icons", "framer-motion"],
   },

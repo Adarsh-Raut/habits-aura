@@ -23,6 +23,13 @@ const { csrfToken } = await (await ctx.request.get(BASE + "/api/auth/csrf")).jso
 await ctx.request.post(BASE + "/api/auth/callback/dev-login", { form: { csrfToken, email, callbackUrl: BASE, json: "true" } });
 
 const page = await ctx.newPage();
+let audioRequests = 0;
+let downloads = 0;
+await page.route("**/audio/completed-sound.mp3", (route) => {
+  audioRequests++;
+  return route.abort();
+});
+page.on("download", () => downloads++);
 const errors = [];
 page.on("pageerror", (e) => errors.push(String(e).slice(0, 120)));
 page.on("console", (m) => m.type() === "error" && errors.push(m.text().slice(0, 120)));
@@ -82,6 +89,12 @@ for (let n = 1; n <= 4; n++) {
     await page.waitForURL(BASE + "/create");
   }
 }
+
+const endedBeforeToggle = await page.evaluate(() => window.__ended);
+await page.getByRole("button", { name: "Toggle Habit" }).first().click();
+await page.waitForFunction((count) => window.__ended > count, endedBeforeToggle, { timeout: 3000 }).catch(() => {});
+check("checking off a habit plays the entire sound", (await page.evaluate(() => window.__ended)) === endedBeforeToggle + 1);
+check("sound needs no separate MP3 request or download", audioRequests === 0 && downloads === 0);
 
 check("no <audio>.load() calls that could abort playback", (await page.evaluate(() => window.__mediaLoads)) === 0);
 check("no console/page errors", errors.length === 0, errors.join(" | "));

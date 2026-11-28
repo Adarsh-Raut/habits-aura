@@ -8,7 +8,8 @@
  * Buffer playback is independent of page changes and can overlap itself.
  */
 
-const SOUND_URL = "/audio/completed-sound.mp3";
+import soundDataUrl from "./completed-sound.mp3";
+
 const VOLUME = 0.4;
 
 let context: AudioContext | null = null;
@@ -35,9 +36,10 @@ function loadBuffer(): Promise<AudioBuffer | null> {
   const audioContext = getContext();
   if (!audioContext) return Promise.resolve(null);
 
-  bufferPromise = fetch(SOUND_URL)
-    .then((response) => response.arrayBuffer())
-    .then((data) => audioContext.decodeAudioData(data))
+  // The clip is bundled so playback never requests a standalone media file.
+  const encoded = soundDataUrl.slice(soundDataUrl.indexOf(",") + 1);
+  const bytes = Uint8Array.from(atob(encoded), (byte) => byte.charCodeAt(0));
+  bufferPromise = audioContext.decodeAudioData(bytes.buffer)
     .catch(() => {
       bufferPromise = null; // allow a retry on the next call
       return null;
@@ -51,18 +53,20 @@ function unlockOnFirstGesture() {
   if (unlockAttached || typeof window === "undefined") return;
   unlockAttached = true;
 
-  const unlock = () => {
+  const unlock = async () => {
     const audioContext = getContext();
-    if (audioContext && audioContext.state === "suspended") {
-      void audioContext.resume().catch(() => {});
+    if (audioContext && audioContext.state !== "running") {
+      await audioContext.resume().catch(() => {});
     }
+    if (audioContext && audioContext.state !== "running") return;
     void loadBuffer();
-    window.removeEventListener("pointerdown", unlock);
-    window.removeEventListener("keydown", unlock);
+    window.removeEventListener("click", unlock, true);
+    window.removeEventListener("keydown", unlock, true);
   };
 
-  window.addEventListener("pointerdown", unlock);
-  window.addEventListener("keydown", unlock);
+  // Click also runs with user activation for touch controls.
+  window.addEventListener("click", unlock, true);
+  window.addEventListener("keydown", unlock, true);
 }
 
 /** Safe to call from any number of components; it only wires things up once. */
@@ -76,13 +80,14 @@ export async function playCompleteSound() {
 
   if (!audioContext) {
     // Very old browsers: a fresh element each time, never reloaded.
-    const fallback = new Audio(SOUND_URL);
+    if (typeof window === "undefined") return;
+    const fallback = new Audio(soundDataUrl);
     fallback.volume = VOLUME;
     void fallback.play().catch(() => {});
     return;
   }
 
-  if (audioContext.state === "suspended") {
+  if (audioContext.state !== "running") {
     await audioContext.resume().catch(() => {});
   }
 
