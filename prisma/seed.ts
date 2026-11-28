@@ -3,24 +3,16 @@ import { PrismaClient } from "@prisma/client";
 import {
   addDaysToKey,
   dateKeyToDate,
-  type DayKey,
   getTodayDateKey,
   resolveTimeZone,
   weekdayKeyOfDateKey,
 } from "../lib/date";
 import { auraForCounts, STARTING_AURA } from "../lib/aura";
 
+import { HABIT_TEMPLATES, getRandomCompletion } from "../lib/demo-history";
+
 const prisma = new PrismaClient();
 const TIME_ZONE = resolveTimeZone(process.env.SEED_TIME_ZONE);
-
-const HABIT_TEMPLATES: { title: string; days: DayKey[]; completionRate: number }[] = [
-  { title: "Morning Workout", days: ["MON", "TUE", "WED", "THU", "FRI"], completionRate: 0.8 },
-  { title: "Read 30 mins", days: ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"], completionRate: 0.9 },
-  { title: "Meditate", days: ["SAT", "SUN"], completionRate: 0.5 },
-  { title: "Evening Walk", days: ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"], completionRate: 0.7 },
-  { title: "No Screens Before Bed", days: ["MON", "WED", "FRI"], completionRate: 0.6 },
-  { title: "Drink 2L Water", days: ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"], completionRate: 0.75 },
-];
 
 /** `consistency` scales every habit's completion rate so users differ. */
 const SEED_USERS = [
@@ -44,16 +36,6 @@ const HISTORY_DAYS = 90;
 
 function randomInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
-function getRandomCompletion(rate: number): "COMPLETED" | "SKIPPED" | null {
-  const rand = Math.random();
-  if (rand < rate) {
-    return "COMPLETED";
-  } else if (rand < rate + 0.2) {
-    return "SKIPPED";
-  }
-  return null;
 }
 
 function generateDateKeys(days: number): string[] {

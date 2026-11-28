@@ -423,6 +423,13 @@ node tests/e2e/audio.e2e.mjs              # creating habits plays the full sound
 node tests/e2e/landing.e2e.mjs            # landing page tests
 ```
 
+To preview guest mode locally, apply the migrations to the Docker database and
+start the dev server with `GUEST_DEMO=1`. Open `/signin` and select **Try the
+demo**. Run `node tests/e2e/guest.e2e.mjs` against that server to check the flow.
+Guest workspaces expire after 24 hours. Expired workspaces are removed in batches
+when new demos are created. Production guest creation requires both Upstash
+credentials and uses Vercel's client IP header for the per-IP limit.
+
 Days are tracked in the user's own timezone (a `tz` cookie set by the browser).
 Streaks are computed from completions, not stored.
 

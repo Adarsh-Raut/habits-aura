@@ -1,7 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { unstable_noStore as noStore } from "next/cache";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getAppSession } from "@/lib/auth";
 import { notFound, redirect } from "next/navigation";
 import dynamic from "next/dynamic";
 
@@ -53,7 +52,7 @@ export default async function EditHabitPage({
 }) {
   noStore();
 
-  const session = await getServerSession(authOptions);
+  const session = await getAppSession();
 
   if (!session?.user?.id) {
     redirect("/signin");

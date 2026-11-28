@@ -1,14 +1,13 @@
 import StatsView from "@/app/components/StatsView";
 import { prisma } from "@/lib/prisma";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getAppSession } from "@/lib/auth";
 import { getTodayDateKey } from "@/lib/date";
 import { getUserTimeZone } from "@/lib/timezone";
 import { calculateStreaks } from "@/lib/streaks";
 import { buildHabitStats } from "@/lib/stats";
 
 export default async function Page() {
-  const session = await getServerSession(authOptions);
+  const session = await getAppSession();
   if (!session?.user?.id) return null;
 
   const timeZone = getUserTimeZone();

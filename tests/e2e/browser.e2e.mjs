@@ -160,10 +160,21 @@ async function run(tz) {
   await page.goto(BASE + "/leaderboard");
   await page.waitForTimeout(800);
   const lbText = await page.locator("body").innerText();
-  const ahead = await prisma.user.count({ where: { OR: [{ auraPoints: { gt: await aura() } }, { auraPoints: await aura(), id: { lt: user.id } }] } });
+  const userAura = await aura();
+  const ahead = await prisma.user.count({
+    where: {
+      isGuest: false,
+      OR: [{ auraPoints: { gt: userAura } }, { auraPoints: userAura, id: { lt: user.id } }],
+    },
+  });
   const rankShown = Number(/Your Rank\s*#(\d+)/.exec(lbText)?.[1]);
   check(`leaderboard: your rank #${ahead + 1} matches DB`, rankShown === ahead + 1, `shown ${rankShown}`);
-  const [top, second] = await prisma.user.findMany({ orderBy: [{ auraPoints: "desc" }, { id: "asc" }], take: 2, select: { name: true } });
+  const [top, second] = await prisma.user.findMany({
+    where: { isGuest: false },
+    orderBy: [{ auraPoints: "desc" }, { id: "asc" }],
+    take: 2,
+    select: { name: true },
+  });
   const topIdx = lbText.indexOf(top.name);
   const secondIdx = lbText.indexOf(second.name);
   check("leaderboard: ranked in aura order (top user listed above #2)", topIdx > -1 && secondIdx > topIdx, `${top.name}@${topIdx} ${second.name}@${secondIdx}`);

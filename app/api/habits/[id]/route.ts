@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
-import { getServerSession } from "next-auth";
 import { revalidatePath } from "next/cache";
-import { authOptions } from "@/lib/auth";
+import { getAppSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
   getTodayDateKey,
@@ -44,9 +43,10 @@ const NEXT_STATUS: Record<Status, Status> = {
 
 /** Serialises concurrent writes to the same habit (double-clicks, 2 tabs). */
 async function lockHabit(tx: TxClient, habitId: string, userId: string) {
-  await tx.$queryRaw`
+  const rows = await tx.$queryRaw<{ id: string }[]>`
     SELECT id FROM habits WHERE id = ${habitId} AND "userId" = ${userId} FOR UPDATE
   `;
+  return rows.length > 0;
 }
 
 async function applyAuraDelta(tx: TxClient, userId: string, delta: number) {
@@ -71,7 +71,7 @@ export async function PATCH(
   _: Request,
   { params }: { params: { id: string } },
 ) {
-  const session = await getServerSession(authOptions);
+  const session = await getAppSession();
   if (!session?.user?.id) return unauthorized();
   const userId = session.user.id;
 
@@ -94,7 +94,7 @@ export async function PATCH(
   }
 
   const status = await prisma.$transaction(async (tx) => {
-    await lockHabit(tx, habitId, userId);
+    if (!await lockHabit(tx, habitId, userId)) return null;
 
     const existing = await tx.habitCompletion.findUnique({
       where: { habitId_dateKey: { habitId, dateKey: todayKey } },
@@ -129,6 +129,7 @@ export async function PATCH(
 
     return to;
   });
+  if (!status) return notFound();
 
   const completions = await prisma.habitCompletion.findMany({
     where: { habitId, action: "COMPLETED" },
@@ -152,7 +153,7 @@ export async function PUT(
   req: Request,
   { params }: { params: { id: string } },
 ) {
-  const session = await getServerSession(authOptions);
+  const session = await getAppSession();
   if (!session?.user?.id) return unauthorized();
   const userId = session.user.id;
 
@@ -170,7 +171,7 @@ export async function PUT(
 
   const result = await prisma.$transaction(async (tx) => {
     await lockHabitTitles(tx, userId);
-    await lockHabit(tx, habitId, userId);
+    if (!await lockHabit(tx, habitId, userId)) return "missing";
     const habit = await tx.habit.findFirst({
       where: { id: habitId, userId },
       select: { title: true, days: true },
@@ -215,7 +216,7 @@ export async function DELETE(
   _: Request,
   { params }: { params: { id: string } },
 ) {
-  const session = await getServerSession(authOptions);
+  const session = await getAppSession();
   if (!session?.user?.id) return unauthorized();
   const userId = session.user.id;
 
@@ -230,8 +231,8 @@ export async function DELETE(
 
   if (!habit) return notFound();
 
-  await prisma.$transaction(async (tx) => {
-    await lockHabit(tx, habitId, userId);
+  const deleted = await prisma.$transaction(async (tx) => {
+    if (!await lockHabit(tx, habitId, userId)) return false;
 
     const counts = await tx.habitCompletion.groupBy({
       by: ["action"],
@@ -249,7 +250,9 @@ export async function DELETE(
     );
 
     await tx.habit.deleteMany({ where: { id: habitId, userId } });
+    return true;
   });
+  if (!deleted) return notFound();
 
   revalidateHabitPages();
 

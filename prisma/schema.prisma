@@ -14,10 +14,13 @@ model User {
   emailVerified DateTime?
   image         String?
   auraPoints    Int       @default(100)
+  isGuest       Boolean   @default(false)
+  guestExpiresAt DateTime?
   accounts      Account[]
   habits        Habit[]
 
   @@index([auraPoints])
+  @@index([isGuest, guestExpiresAt])
 }
 
 model Account {

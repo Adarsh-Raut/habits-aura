@@ -1,9 +1,9 @@
+import GuestBanner from "@/app/components/GuestBanner";
 import QueryProvider from "@/app/components/QueryProvider";
 import Navbar from "@/app/components/Navbar";
 import Sidebar from "@/app/components/Sidebar";
 import TimezoneSync from "@/app/components/TimezoneSync";
-import { authOptions } from "@/lib/auth";
-import { getServerSession } from "next-auth";
+import { getAppSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 
 export default async function AppLayout({
@@ -11,7 +11,7 @@ export default async function AppLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await getServerSession(authOptions);
+  const session = await getAppSession();
 
   if (!session?.user?.id) {
     redirect("/signin");
@@ -25,7 +25,12 @@ export default async function AppLayout({
 
         <div className="drawer-content relative z-0 flex flex-col">
           <Navbar user={session.user} />
-          <main className="flex-1 overflow-y-auto p-4 sm:p-6">{children}</main>
+          <main className="flex-1 overflow-y-auto p-4 sm:p-6">
+            {session.user.guestExpiresAt !== undefined && (
+              <GuestBanner expiresAt={session.user.guestExpiresAt} />
+            )}
+            {children}
+          </main>
         </div>
 
         <div className="drawer-side">

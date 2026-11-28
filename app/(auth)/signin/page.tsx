@@ -2,6 +2,8 @@ import { IoChevronDown } from "react-icons/io5";
 import { FaFireAlt } from "react-icons/fa";
 import DevLogin from "@/app/components/DevLogin";
 import Logo from "@/app/components/Logo";
+import { guestDemoEnabled } from "@/lib/auth";
+import GuestCta from "@/app/components/landing/GuestCta";
 import GoogleCta from "@/app/components/landing/GoogleCta";
 import Marquee from "@/app/components/landing/Marquee";
 import {
@@ -81,16 +83,16 @@ export default function LandingPage() {
 
       {/* Nav */}
       <header className="sticky top-0 z-40 border-b border-ash bg-paper/95 backdrop-blur-sm">
-        <div className="mx-auto flex h-[72px] w-full max-w-[1160px] items-center justify-between gap-4 px-6">
-          <a href="#top" className="flex items-center gap-2.5">
+        <div className="mx-auto flex h-[72px] w-full max-w-[1160px] items-center justify-between gap-2 px-4 sm:gap-4 sm:px-6">
+          <a href="#top" aria-label="Habits Aura home" className="flex shrink-0 items-center gap-2">
             <Logo className="h-[26px] w-[26px]" />
-            <span className="text-[19px] font-extrabold tracking-tight">
+            <span className="hidden text-[19px] font-extrabold tracking-tight min-[360px]:inline">
               Habits Aura
             </span>
           </a>
           <nav
             aria-label="Primary"
-            className="flex items-center gap-4 text-[15px] font-semibold text-graphite sm:gap-7"
+            className="flex items-center gap-2 text-[15px] font-semibold text-graphite sm:gap-7"
           >
             <a href="#features" className="hidden hover:text-ink md:inline">
               Features
@@ -101,7 +103,8 @@ export default function LandingPage() {
             <a href="#faq" className="hidden hover:text-ink md:inline">
               FAQ
             </a>
-            <GoogleCta label="Sign in" variant="link" />
+            {guestDemoEnabled && <GuestCta variant="header" />}
+            <GoogleCta label="Sign in" variant="link" className="whitespace-nowrap" />
           </nav>
         </div>
       </header>
@@ -129,7 +132,8 @@ export default function LandingPage() {
                 you rank among everyone else.
               </p>
               <div className="anim-rise mt-7 flex flex-wrap items-center gap-x-[22px] gap-y-4 [animation-delay:440ms]">
-                <GoogleCta size="lg" />
+                {guestDemoEnabled && <GuestCta />}
+                <GoogleCta size="lg" variant={guestDemoEnabled ? "ghost" : "signal"} />
                 <a
                   href="#how"
                   className="text-base font-bold underline decoration-2 underline-offset-4 hover:text-signal-text"
@@ -138,7 +142,7 @@ export default function LandingPage() {
                 </a>
               </div>
               <p className="anim-rise mt-3.5 text-sm text-[#6a6a70] [animation-delay:440ms]">
-                Free. Sign in with Google in ten seconds.
+                {guestDemoEnabled ? "No account needed to try it." : "Free. Sign in with Google in ten seconds."}
               </p>
             </div>
 
@@ -273,6 +277,7 @@ export default function LandingPage() {
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-4">
               <GoogleCta size="xl" />
+              {guestDemoEnabled && <GuestCta variant="dark" />}
               <span className="text-sm text-fog">Free. No credit card.</span>
             </div>
           </Reveal>

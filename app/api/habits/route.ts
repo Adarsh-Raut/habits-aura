@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
 import { revalidatePath } from "next/cache";
-import { authOptions } from "@/lib/auth";
+import { getAppSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getHabitsForUser, hasHabitTitle, lockHabitTitles } from "@/lib/habits";
 import { getUserTimeZone } from "@/lib/timezone";
@@ -16,7 +15,7 @@ import {
 } from "@/lib/api";
 
 export async function GET() {
-  const session = await getServerSession(authOptions);
+  const session = await getAppSession();
   if (!session?.user?.id) return unauthorized();
 
   const habits = await getHabitsForUser(session.user.id, getUserTimeZone());
@@ -26,7 +25,7 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getAppSession();
     if (!session?.user?.id) return unauthorized();
 
     const limited = rateLimitResponse(
