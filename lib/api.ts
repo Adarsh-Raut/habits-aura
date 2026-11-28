@@ -14,6 +14,13 @@ export function badRequest(error: string) {
   return NextResponse.json({ error }, { status: 400 });
 }
 
+export function duplicateHabitTitle() {
+  return NextResponse.json(
+    { error: "You already have a habit with this name." },
+    { status: 409 },
+  );
+}
+
 /** Returns a 429 response when the limit was hit, otherwise null. */
 export function rateLimitResponse({ success, remaining, reset }: LimitResult) {
   if (success) return null;

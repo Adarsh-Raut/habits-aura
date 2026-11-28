@@ -45,6 +45,14 @@ type CreateHabitFormProps = {
   initialDays?: string[];
 };
 
+async function habitSaveError(response: Response, fallback: string) {
+  if (response.status === 409) {
+    const body = await response.json().catch(() => null);
+    if (typeof body?.error === "string") return new Error(body.error);
+  }
+  return new Error(fallback);
+}
+
 export default function CreateHabitForm({
   habitId,
   initialTitle = "",
@@ -89,7 +97,7 @@ export default function CreateHabitForm({
         body: JSON.stringify(payload),
       });
 
-      if (!res.ok) throw new Error("Failed to create");
+      if (!res.ok) throw await habitSaveError(res, "Failed to create habit");
 
       return (await res.json()) as Habit & { createdAt: string };
     },
@@ -116,8 +124,8 @@ export default function CreateHabitForm({
       queryClient.invalidateQueries({ queryKey: HABITS_QUERY_KEY });
       router.replace("/");
     },
-    onError: () => {
-      toast.error("Failed to create habit");
+    onError: (error) => {
+      toast.error(error.message);
     },
   });
 
@@ -129,7 +137,7 @@ export default function CreateHabitForm({
         body: JSON.stringify(payload),
       });
 
-      if (!res.ok) throw new Error("Failed to update");
+      if (!res.ok) throw await habitSaveError(res, "Failed to update habit");
 
       return (await res.json()) as Habit & { createdAt: string };
     },
@@ -149,8 +157,8 @@ export default function CreateHabitForm({
       queryClient.invalidateQueries({ queryKey: HABITS_QUERY_KEY });
       router.replace("/");
     },
-    onError: () => {
-      toast.error("Failed to update habit");
+    onError: (error) => {
+      toast.error(error.message);
     },
   });
 

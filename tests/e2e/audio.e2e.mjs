@@ -96,8 +96,19 @@ await page.waitForFunction((count) => window.__ended > count, endedBeforeToggle,
 check("checking off a habit plays the entire sound", (await page.evaluate(() => window.__ended)) === endedBeforeToggle + 1);
 check("sound needs no separate MP3 request or download", audioRequests === 0 && downloads === 0);
 
+await page.getByRole("link", { name: "New habit" }).click();
+await page.waitForURL(BASE + "/create");
+await page.fill('input[placeholder="Type your habit"]', "HABIT NUMBER 1");
+await page.click('button[aria-label="Create Habit"]');
+const conflictToast = page.getByText("You already have a habit with this name.", { exact: true });
+check("a duplicate name shows an explanation and leaves the form open",
+  await conflictToast.waitFor({ timeout: 3000 }).then(() => page.url() === BASE + "/create", () => false));
+check("a rejected creation does not play the success sound",
+  (await page.evaluate(() => window.__starts)) === endedBeforeToggle + 1);
+
 check("no <audio>.load() calls that could abort playback", (await page.evaluate(() => window.__mediaLoads)) === 0);
-check("no console/page errors", errors.length === 0, errors.join(" | "));
+const unexpectedErrors = errors.filter((error) => error !== "Failed to load resource: the server responded with a status of 409 (Conflict)");
+check("no unexpected console/page errors", unexpectedErrors.length === 0, unexpectedErrors.join(" | "));
 
 await browser.close();
 await prisma.user.delete({ where: { id: user.id } });

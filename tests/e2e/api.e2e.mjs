@@ -84,6 +84,33 @@ check("other user can't edit", (await other(`/api/habits/${created.id}`, { metho
 check("other user can't delete", (await other(`/api/habits/${created.id}`, { method: "DELETE" })).status === 404);
 check("other user can't read stats", (await other(`/api/habits/${created.id}/stats`)).status === 404);
 
+// --- duplicate titles
+const titleInput = (title) => JSON.stringify({ title, days: ALL });
+const duplicate = await call("/api/habits", { method: "POST", body: titleInput("  E2E HABIT  ") });
+check("create rejects the same title regardless of case or outer spaces", duplicate.status === 409);
+if (duplicate.status === 201) {
+  const { id } = await duplicate.json();
+  await call(`/api/habits/${id}`, { method: "DELETE" });
+}
+const sameTitleOtherUser = await other("/api/habits", { method: "POST", body: titleInput("e2e habit") });
+check("another user can use the same title", sameTitleOtherUser.status === 201);
+if (sameTitleOtherUser.status === 201) {
+  const { id } = await sameTitleOtherUser.json();
+  await other(`/api/habits/${id}`, { method: "DELETE" });
+}
+const competing = await Promise.all(["E2E race %_", "e2e race %_"].map((title) =>
+  call("/api/habits", { method: "POST", body: titleInput(title) }),
+));
+check("concurrent creates with the same title save exactly one habit", competing.map((r) => r.status).sort().join(",") === "201,409");
+for (const response of competing.filter((r) => r.status === 201)) {
+  const { id } = await response.json();
+  const rename = await call(`/api/habits/${id}`, { method: "PUT", body: titleInput("e2e habit") });
+  check("edit rejects renaming to another habit's title", rename.status === 409);
+  await call(`/api/habits/${id}`, { method: "DELETE" });
+}
+const unchanged = await call(`/api/habits/${created.id}`, { method: "PUT", body: titleInput("e2e habit") });
+check("edit can keep the habit's current title", unchanged.status === 200);
+
 // --- edit validation + removing today refunds aura
 check("edit: bad days -> 400", (await call(`/api/habits/${created.id}`, { method: "PUT", body: JSON.stringify({ title: "x", days: ["NOPE"] }) })).status === 400);
 check("edit: non-string title -> 400 (no crash)", (await call(`/api/habits/${created.id}`, { method: "PUT", body: JSON.stringify({ title: 5, days: ALL }) })).status === 400);

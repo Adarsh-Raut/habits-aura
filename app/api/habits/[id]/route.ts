@@ -21,11 +21,12 @@ import {
   habitUpdateLimiter,
 } from "@/lib/ratelimit";
 import { calculateStreaks } from "@/lib/streaks";
-import { getHabitForUser } from "@/lib/habits";
+import { getHabitForUser, hasHabitTitle, lockHabitTitles } from "@/lib/habits";
 import { getUserTimeZone } from "@/lib/timezone";
 import { parseHabitInput } from "@/lib/validation";
 import {
   badRequest,
+  duplicateHabitTitle,
   notFound,
   rateLimitResponse,
   readJson,
@@ -42,8 +43,10 @@ const NEXT_STATUS: Record<Status, Status> = {
 };
 
 /** Serialises concurrent writes to the same habit (double-clicks, 2 tabs). */
-async function lockHabit(tx: TxClient, habitId: string) {
-  await tx.$queryRaw`SELECT id FROM habits WHERE id = ${habitId} FOR UPDATE`;
+async function lockHabit(tx: TxClient, habitId: string, userId: string) {
+  await tx.$queryRaw`
+    SELECT id FROM habits WHERE id = ${habitId} AND "userId" = ${userId} FOR UPDATE
+  `;
 }
 
 async function applyAuraDelta(tx: TxClient, userId: string, delta: number) {
@@ -91,7 +94,7 @@ export async function PATCH(
   }
 
   const status = await prisma.$transaction(async (tx) => {
-    await lockHabit(tx, habitId);
+    await lockHabit(tx, habitId, userId);
 
     const existing = await tx.habitCompletion.findUnique({
       where: { habitId_dateKey: { habitId, dateKey: todayKey } },
@@ -161,24 +164,24 @@ export async function PUT(
   const { title, days: newDays } = parsed.value;
 
   const habitId = params.id;
-  const habit = await prisma.habit.findFirst({
-    where: { id: habitId, userId },
-    select: { days: true },
-  });
-
-  if (!habit) return notFound();
-
   const timeZone = getUserTimeZone();
   const todayKey = getTodayDateKey(timeZone);
-  const todayWasRemoved =
-    habit.days.includes(getTodayWeekdayKey(timeZone)) &&
-    !newDays.includes(getTodayWeekdayKey(timeZone));
+  const todayWeekday = getTodayWeekdayKey(timeZone);
 
-  await prisma.$transaction(async (tx) => {
-    await lockHabit(tx, habitId);
+  const result = await prisma.$transaction(async (tx) => {
+    await lockHabitTitles(tx, userId);
+    await lockHabit(tx, habitId, userId);
+    const habit = await tx.habit.findFirst({
+      where: { id: habitId, userId },
+      select: { title: true, days: true },
+    });
+    if (!habit) return "missing";
+    if (habit.title !== title && await hasHabitTitle(tx, userId, title, habitId)) {
+      return "duplicate";
+    }
 
     // Today is no longer scheduled: drop today's record and its aura.
-    if (todayWasRemoved) {
+    if (habit.days.includes(todayWeekday) && !newDays.includes(todayWeekday)) {
       const existing = await tx.habitCompletion.findUnique({
         where: { habitId_dateKey: { habitId, dateKey: todayKey } },
       });
@@ -193,7 +196,10 @@ export async function PUT(
       where: { id: habitId },
       data: { title, days: newDays },
     });
+    return "updated";
   });
+  if (result === "missing") return notFound();
+  if (result === "duplicate") return duplicateHabitTitle();
 
   revalidateHabitPages(habitId);
 
@@ -225,7 +231,7 @@ export async function DELETE(
   if (!habit) return notFound();
 
   await prisma.$transaction(async (tx) => {
-    await lockHabit(tx, habitId);
+    await lockHabit(tx, habitId, userId);
 
     const counts = await tx.habitCompletion.groupBy({
       by: ["action"],

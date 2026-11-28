@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { addDaysToKey, getTodayDateKey } from "@/lib/date";
 import { calculateStreaks } from "@/lib/streaks";
 import type { Habit } from "@/app/types/habit";
@@ -9,6 +10,27 @@ import type { Habit } from "@/app/types/habit";
  * Current streaks longer than the window are capped at roughly this length.
  */
 const LIST_HISTORY_DAYS = 800;
+
+/** Serialize title checks and writes for the same user, including across tabs. */
+export async function lockHabitTitles(tx: Prisma.TransactionClient, userId: string) {
+  await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`habit-titles:${userId}`}, 0))`;
+}
+
+export async function hasHabitTitle(
+  tx: Prisma.TransactionClient,
+  userId: string,
+  title: string,
+  excludingId?: string,
+) {
+  const [row] = await tx.$queryRaw<{ exists: boolean }[]>`
+    SELECT EXISTS (
+      SELECT 1 FROM habits
+      WHERE "userId" = ${userId} AND lower(title) = lower(${title})
+      ${excludingId ? Prisma.sql`AND id <> ${excludingId}` : Prisma.empty}
+    )
+  `;
+  return row.exists;
+}
 
 function habitSelect(timeZone: string) {
   const since = addDaysToKey(getTodayDateKey(timeZone), -LIST_HISTORY_DAYS);

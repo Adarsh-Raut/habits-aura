@@ -3,12 +3,13 @@ import { getServerSession } from "next-auth";
 import { revalidatePath } from "next/cache";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getHabitsForUser } from "@/lib/habits";
+import { getHabitsForUser, hasHabitTitle, lockHabitTitles } from "@/lib/habits";
 import { getUserTimeZone } from "@/lib/timezone";
 import { habitCreateLimiter } from "@/lib/ratelimit";
 import { parseHabitInput } from "@/lib/validation";
 import {
   badRequest,
+  duplicateHabitTitle,
   rateLimitResponse,
   readJson,
   unauthorized,
@@ -36,9 +37,14 @@ export async function POST(req: Request) {
     const parsed = parseHabitInput(await readJson(req));
     if (!parsed.ok) return badRequest(parsed.error);
 
-    const habit = await prisma.habit.create({
-      data: { ...parsed.value, userId: session.user.id },
+    const userId = session.user.id;
+    const input = parsed.value;
+    const habit = await prisma.$transaction(async (tx) => {
+      await lockHabitTitles(tx, userId);
+      if (await hasHabitTitle(tx, userId, input.title)) return null;
+      return tx.habit.create({ data: { ...input, userId } });
     });
+    if (!habit) return duplicateHabitTitle();
 
     revalidatePath("/");
 
